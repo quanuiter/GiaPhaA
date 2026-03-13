@@ -1,13 +1,14 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, GitBranch, CalendarDays, ChevronLeft } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 
 const navItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Tổng quan' },
-  { to: '/members',   icon: Users,           label: 'Thành viên' },
-  { to: '/tree',      icon: GitBranch,       label: 'Phả đồ'    },
-  { to: '/events',    icon: CalendarDays,    label: 'Sự kiện'   },
+  { to: '/dashboard', label: 'Tổng quan' },
+  { to: '/members',   label: 'Thành viên' },
+  { to: '/tree',      label: 'Phả đồ' },
+  { to: '/events',    label: 'Sự kiện' },
 ]
+
+const roleLabel = { admin: 'Quản trị viên', editor: 'Biên tập viên', viewer: 'Khách' }
 
 export default function Sidebar() {
   const { currentTree, clearTree } = useAuthStore()
@@ -16,36 +17,41 @@ export default function Sidebar() {
   const handleSwitchTree = () => { clearTree(); navigate('/trees') }
 
   return (
-    <aside className="w-56 bg-blue-900 text-white flex flex-col shadow-xl">
+    <aside className="w-56 bg-gradient-to-b from-amber-100 to-amber-50 flex flex-col shadow-xl border-r-4 border-amber-900 border-opacity-20">
       {/* Tree info */}
-      <div className="p-4 border-b border-blue-700">
-        <p className="text-xs text-blue-400 uppercase tracking-widest mb-1">Cây đang quản lý</p>
-        <p className="font-bold text-sm leading-tight line-clamp-2">{currentTree?.name}</p>
-        <span className={`text-xs mt-1 inline-block px-2 py-0.5 rounded-full
-          ${currentTree?.myRole === 'admin' ? 'bg-red-900 text-red-200' :
-            currentTree?.myRole === 'editor' ? 'bg-blue-700 text-blue-200' : 'bg-gray-700 text-gray-300'}`}>
-          {currentTree?.myRole === 'admin' ? '👑 Admin' :
-           currentTree?.myRole === 'editor' ? '✏️ Editor' : '👁 Viewer'}
+      <div className="p-5 border-b-2 border-amber-900 border-opacity-20">
+        <p className="text-xs text-amber-800 font-light mb-2" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.1em'}}>Cây Đang Quản Lý</p>
+        <p className="font-light text-sm leading-tight line-clamp-2 text-amber-950" style={{fontFamily: 'Georgia, serif'}}>{currentTree?.name}</p>
+        <span className="text-xs mt-2 inline-block px-3 py-1 bg-amber-200 text-amber-900 font-light" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>
+          {roleLabel[currentTree?.myRole]}
         </span>
       </div>
 
-      <nav className="flex-1 p-3 space-y-1">
-        {navItems.map(({ to, icon: Icon, label }) => (
+      <nav className="flex-1 p-4 space-y-2">
+        {navItems.map(({ to, label }) => (
           <NavLink key={to} to={to}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all
-               ${isActive ? 'bg-white text-blue-900 shadow-sm' : 'text-blue-100 hover:bg-blue-700'}`
-            }>
-            <Icon size={18}/> {label}
+              `flex items-center px-4 py-2.5 text-sm font-light transition-all ${isActive 
+                ? 'bg-amber-900 text-amber-50 border-l-2 border-amber-900' 
+                : 'text-amber-900 hover:bg-amber-200 hover:bg-opacity-50'}`
+            }
+            style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>
+            • {label}
           </NavLink>
         ))}
       </nav>
 
+      {/* Decorative divider */}
+      <div className="px-4 py-2 flex justify-center">
+        <div className="text-amber-800 opacity-40" style={{fontSize: '0.7rem'}}>※</div>
+      </div>
+
       {/* Đổi cây */}
-      <div className="p-3 border-t border-blue-700">
+      <div className="p-4 border-t-2 border-amber-900 border-opacity-20">
         <button onClick={handleSwitchTree}
-          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-blue-200 hover:bg-blue-700 transition-all">
-          <ChevronLeft size={18}/> Đổi cây khác
+          className="w-full px-4 py-2.5 text-sm text-amber-900 border-2 border-amber-900 border-opacity-30 hover:bg-amber-200 font-light transition-all"
+          style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>
+          ← Đổi cây khác
         </button>
       </div>
     </aside>
