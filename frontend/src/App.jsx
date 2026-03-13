@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-
+import '@xyflow/react/dist/style.css'
 import ProtectedRoute   from './components/ProtectedRoute'
 import TreeRoute        from './components/TreeRoute'
 import Layout           from './components/Layout'
