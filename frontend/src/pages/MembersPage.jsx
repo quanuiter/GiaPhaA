@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom'
 import { treeApi } from '../services/api'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
-import { Plus, Search, Pencil, Trash2, Eye, Filter } from 'lucide-react'
 
 export default function MembersPage() {
   const { user, currentTree } = useAuthStore()
@@ -32,107 +31,120 @@ export default function MembersPage() {
   })
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Thành viên</h2>
-          <p className="text-gray-400 text-sm">{members.length} thành viên</p>
+          <h2 className="text-3xl font-light text-amber-950" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.1em'}}>Thành Viên</h2>
+          <p className="text-amber-700 text-sm font-light mt-1" style={{fontFamily: 'Georgia, serif'}}>{members.length} thành viên</p>
         </div>
         {(myRole === 'admin' || myRole === 'editor') && (
-          <Link to="/members/new" className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition-colors">
-            <Plus size={16}/> Thêm thành viên
+          <Link to="/members/new" className="px-6 py-2.5 bg-amber-900 text-amber-50 font-light transition hover:bg-amber-950" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>
+            + Thêm Thành Viên
           </Link>
         )}
       </div>
 
+      {/* Decorative divider */}
+      <div className="flex justify-center items-center gap-3">
+        <div className="flex-1 h-px bg-gradient-to-r from-transparent to-amber-900 opacity-30"></div>
+        <div className="text-amber-800 opacity-40" style={{fontSize: '0.8rem'}}>※</div>
+        <div className="flex-1 h-px bg-gradient-to-l from-transparent to-amber-900 opacity-30"></div>
+      </div>
+
       {/* Filter */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-wrap gap-3 items-end">
-        <div className="flex-1 min-w-48">
-          <label className="block text-xs font-medium text-gray-500 mb-1 flex items-center gap-1"><Search size={12}/> Tìm kiếm</label>
-          <input className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Họ tên, tên gọi khác..."
-            value={filters.keyword}
-            onChange={e => setFilters(f => ({ ...f, keyword: e.target.value }))}/>
+      <div className="relative bg-gradient-to-b from-amber-100 to-amber-50 rounded-sm border-2 border-amber-900 border-opacity-20 p-6 shadow-lg" style={{boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)'}}>
+        <div className="absolute top-2 left-2 w-4 h-4 border-t border-l border-amber-800 opacity-30"></div>
+        <div className="absolute top-2 right-2 w-4 h-4 border-t border-r border-amber-800 opacity-30"></div>
+        <div className="flex flex-wrap gap-4 items-end">
+          <div className="flex-1 min-w-48">
+            <label className="block text-xs font-light text-amber-900 mb-2" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>Tìm Kiếm</label>
+            <input className="w-full border-2 border-amber-900 border-opacity-30 bg-white bg-opacity-70 px-4 py-2.5 focus:outline-none focus:border-amber-800 text-amber-950 placeholder-amber-700 placeholder-opacity-50 transition"
+              style={{fontFamily: 'Georgia, serif'}}
+              placeholder="Họ tên, tên gọi khác..."
+              value={filters.keyword}
+              onChange={e => setFilters(f => ({ ...f, keyword: e.target.value }))}/>
+          </div>
+          <div>
+            <label className="block text-xs font-light text-amber-900 mb-2" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>Giới Tính</label>
+            <select className="border-2 border-amber-900 border-opacity-30 bg-white bg-opacity-70 px-4 py-2.5 focus:outline-none focus:border-amber-800 text-amber-950 transition w-32" style={{fontFamily: 'Georgia, serif'}}
+              value={filters.gender} onChange={e => setFilters(f => ({ ...f, gender: e.target.value }))}>
+              <option value="">Tất cả</option>
+              <option value="male">Nam</option>
+              <option value="female">Nữ</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-light text-amber-900 mb-2" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>Trạng Thái</label>
+            <select className="border-2 border-amber-900 border-opacity-30 bg-white bg-opacity-70 px-4 py-2.5 focus:outline-none focus:border-amber-800 text-amber-950 transition w-36" style={{fontFamily: 'Georgia, serif'}}
+              value={filters.isDeceased} onChange={e => setFilters(f => ({ ...f, isDeceased: e.target.value }))}>
+              <option value="">Tất cả</option>
+              <option value="false">Còn sống</option>
+              <option value="true">Đã mất</option>
+            </select>
+          </div>
+          <button onClick={() => setFilters({ keyword: '', gender: '', isDeceased: '' })}
+            className="px-4 py-2.5 text-sm text-amber-900 border-2 border-amber-900 border-opacity-30 hover:bg-amber-200 transition-colors font-light" style={{fontFamily: 'Georgia, serif'}}>
+            Xóa Lọc
+          </button>
         </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Giới tính</label>
-          <select className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-32"
-            value={filters.gender} onChange={e => setFilters(f => ({ ...f, gender: e.target.value }))}>
-            <option value="">Tất cả</option>
-            <option value="male">Nam</option>
-            <option value="female">Nữ</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Trạng thái</label>
-          <select className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-36"
-            value={filters.isDeceased} onChange={e => setFilters(f => ({ ...f, isDeceased: e.target.value }))}>
-            <option value="">Tất cả</option>
-            <option value="false">Còn sống</option>
-            <option value="true">Đã mất</option>
-          </select>
-        </div>
-        <button onClick={() => setFilters({ keyword: '', gender: '', isDeceased: '' })}
-          className="px-3 py-2 text-sm text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-          Xóa lọc
-        </button>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="relative bg-gradient-to-b from-amber-100 to-amber-50 rounded-sm border-2 border-amber-900 border-opacity-20 shadow-lg overflow-hidden" style={{boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)'}}>
+        <div className="absolute top-2 left-2 w-4 h-4 border-t border-l border-amber-800 opacity-30"></div>
+        <div className="absolute top-2 right-2 w-4 h-4 border-t border-r border-amber-800 opacity-30"></div>
         {isLoading ? (
-          <div className="flex justify-center py-16"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"/></div>
+          <div className="flex justify-center py-16"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-900 opacity-40"/></div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100">
+            <thead className="bg-amber-200 bg-opacity-40 border-b-2 border-amber-900 border-opacity-20">
               <tr>
                 {['STT','Họ và tên','Giới tính','Năm sinh','Đời','Cha','Mẹ','Trạng thái',''].map(h => (
-                  <th key={h} className="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  <th key={h} className="text-left px-4 py-3 font-light text-amber-900 text-xs whitespace-nowrap" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-amber-900 divide-opacity-20">
               {members.map((m, i) => (
-                <tr key={m.id} className="hover:bg-blue-50/50 transition-colors">
-                  <td className="px-4 py-3 text-gray-400 text-xs">{i + 1}</td>
+                <tr key={m.id} className="hover:bg-amber-200 hover:bg-opacity-30 transition-colors">
+                  <td className="px-4 py-3 text-amber-700 text-xs font-light">{i + 1}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0
-                        ${m.gender === 'male' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-light flex-shrink-0 ${m.gender === 'male' ? 'bg-amber-300 text-amber-900' : 'bg-amber-200 text-amber-800'}`}>
                         {m.fullName.split(' ').pop()[0]}
                       </div>
                       <div>
-                        <p className="font-medium text-gray-800">{m.fullName}</p>
-                        {m.nickname && <p className="text-xs text-gray-400 italic">{m.nickname}</p>}
+                        <p className="font-light text-amber-950" style={{fontFamily: 'Georgia, serif'}}>{m.fullName}</p>
+                        {m.nickname && <p className="text-xs text-amber-700 italic font-light">{m.nickname}</p>}
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${m.gender === 'male' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>
+                    <span className={`text-xs px-2 py-0.5 ${m.gender === 'male' ? 'bg-amber-300 text-amber-900' : 'bg-amber-200 text-amber-800'} font-light`}>
                       {m.gender === 'male' ? 'Nam' : 'Nữ'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-500">{m.birthDate ? new Date(m.birthDate).getFullYear() : '—'}</td>
+                  <td className="px-4 py-3 text-amber-800 font-light">{m.birthDate ? new Date(m.birthDate).getFullYear() : '—'}</td>
                   <td className="px-4 py-3">
-                    <span className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full">Đời {m.generation}</span>
+                    <span className="bg-amber-300 text-amber-900 text-xs px-2 py-0.5 font-light">Đời {m.generation}</span>
                   </td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">{m.father?.fullName || '—'}</td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">{m.mother?.fullName || '—'}</td>
+                  <td className="px-4 py-3 text-amber-800 text-xs font-light">{m.father?.fullName || '—'}</td>
+                  <td className="px-4 py-3 text-amber-800 text-xs font-light">{m.mother?.fullName || '—'}</td>
                   <td className="px-4 py-3">
                     {m.isDeceased
-                      ? <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">✞ Đã mất</span>
-                      : <span className="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full">● Còn sống</span>
+                      ? <span className="text-xs bg-amber-200 text-amber-900 px-2 py-0.5 font-light">✞ Đã mất</span>
+                      : <span className="text-xs bg-amber-300 text-amber-900 px-2 py-0.5 font-light">• Còn sống</span>
                     }
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
-                      <Link to={`/members/${m.id}`} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors"><Eye size={14}/></Link>
+                      <Link to={`/members/${m.id}`} className="p-1.5 text-amber-900 hover:bg-amber-200 transition-colors" title="Xem">Xem</Link>
                       {(myRole === 'admin' || myRole === 'editor') && (
-                        <Link to={`/members/${m.id}/edit`} className="p-1.5 text-amber-500 hover:bg-amber-100 rounded-lg transition-colors"><Pencil size={14}/></Link>
+                        <Link to={`/members/${m.id}/edit`} className="p-1.5 text-amber-900 hover:bg-amber-200 transition-colors" title="Sửa">Sửa</Link>
                       )}
                       {myRole === 'admin' && (
                         <button onClick={() => confirm(`Xóa "${m.fullName}"?`) && deleteMutation.mutate(m.id)}
-                          className="p-1.5 text-red-400 hover:bg-red-100 rounded-lg transition-colors"><Trash2 size={14}/></button>
+                          className="p-1.5 text-amber-900 hover:bg-amber-200 transition-colors" title="Xóa">Xóa</button>
                       )}
                     </div>
                   </td>
@@ -142,9 +154,8 @@ export default function MembersPage() {
           </table>
         )}
         {!isLoading && !members.length && (
-          <div className="text-center py-16 text-gray-400">
-            <Users className="mx-auto mb-2 opacity-20" size={40}/>
-            <p className="text-sm">Chưa có thành viên</p>
+          <div className="text-center py-16 text-amber-700 font-light">
+            <p className="text-sm" style={{fontFamily: 'Georgia, serif'}}>Chưa có thành viên</p>
           </div>
         )}
       </div>

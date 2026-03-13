@@ -4,12 +4,11 @@ import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../store/authStore'
 import { treeApi } from '../services/api'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Save, User, Users, Heart, Crown } from 'lucide-react'
 
 const RELATION_TYPES = [
-  { value: 'root',   label: 'Đời đầu (tổ)',  icon: Crown,  desc: 'Thành viên gốc, không có cha mẹ trong hệ thống' },
-  { value: 'child',  label: 'Con',           icon: Users,  desc: 'Thêm như con của một thành viên đã có' },
-  { value: 'spouse', label: 'Vợ / Chồng',   icon: Heart,  desc: 'Thêm và tự động tạo hôn nhân với một thành viên' },
+  { value: 'root',   label: 'Đời đầu (tổ)',  desc: 'Thành viên gốc, không có cha mẹ trong hệ thống' },
+  { value: 'child',  label: 'Con',           desc: 'Thêm như con của một thành viên đã có' },
+  { value: 'spouse', label: 'Vợ / Chồng',   desc: 'Thêm và tự động tạo hôn nhân với một thành viên' },
 ]
 
 export default function MemberFormPage() {
@@ -177,16 +176,16 @@ export default function MemberFormPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-5">
       {/* Header */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         <button onClick={() => navigate(-1)}
-          className="p-2 text-gray-500 hover:bg-gray-100 rounded-xl transition-colors">
-          <ArrowLeft size={18}/>
+          className="p-2 text-amber-900 hover:bg-amber-200 transition-colors" style={{fontFamily: 'Georgia, serif'}}>
+          ←
         </button>
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">
-            {isEdit ? 'Chỉnh sửa thành viên' : 'Thêm thành viên mới'}
+          <h2 className="text-2xl font-light text-amber-950" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.1em'}}>
+            {isEdit ? 'Chỉnh Sửa Thành Viên' : 'Thêm Thành Viên Mới'}
           </h2>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-amber-700 font-light mt-1" style={{fontFamily: 'Georgia, serif'}}>
             {isEdit ? `Đang sửa: ${member?.fullName}` : currentTree?.name}
           </p>
         </div>
@@ -196,19 +195,20 @@ export default function MemberFormPage() {
 
         {/* Loại quan hệ — chỉ hiện khi thêm mới */}
         {!isEdit && (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-            <h3 className="font-semibold text-gray-700 mb-3">Loại quan hệ khi thêm</h3>
-            <div className="grid grid-cols-3 gap-3">
-              {RELATION_TYPES.map(({ value, label, icon: Icon, desc }) => (
+          <div className="relative bg-gradient-to-b from-amber-100 to-amber-50 rounded-sm border-2 border-amber-900 border-opacity-20 shadow-lg p-6" style={{boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)'}}>
+            <div className="absolute top-2 left-2 w-4 h-4 border-t border-l border-amber-800 opacity-30"></div>
+            <h3 className="font-light text-amber-950 mb-4" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.08em'}}>Loại Quan Hệ Khi Thêm</h3>
+            <div className="grid grid-cols-3 gap-4">
+              {RELATION_TYPES.map(({ value, label, desc }) => (
                 <button key={value} type="button"
                   onClick={() => handleRelationChange(value)}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center
+                  className={`flex flex-col items-center gap-2 p-4 rounded-sm border-2 transition-all text-center
                     ${relationType === value
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-200 hover:border-gray-300 text-gray-600'}`}>
-                  <Icon size={22} className={relationType === value ? 'text-blue-600' : 'text-gray-400'}/>
-                  <span className="font-semibold text-sm">{label}</span>
-                  <span className="text-xs leading-tight opacity-70">{desc}</span>
+                      ? 'border-amber-900 bg-amber-200 bg-opacity-40 text-amber-950'
+                      : 'border-amber-900 border-opacity-30 hover:border-opacity-50 text-amber-900'}`}
+                  style={{fontFamily: 'Georgia, serif'}}>
+                  <span className="font-light text-sm">{label}</span>
+                  <span className="text-xs leading-tight opacity-70 font-light">{desc}</span>
                 </button>
               ))}
             </div>
@@ -216,28 +216,30 @@ export default function MemberFormPage() {
         )}
 
         {/* Ảnh đại diện */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex items-center gap-5">
-          <div className="w-20 h-20 rounded-full bg-gray-50 border-2 border-dashed border-gray-200
+        <div className="relative bg-gradient-to-b from-amber-100 to-amber-50 rounded-sm border-2 border-amber-900 border-opacity-20 shadow-lg p-6 flex items-center gap-6" style={{boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)'}}>
+          <div className="absolute top-2 left-2 w-4 h-4 border-t border-l border-amber-800 opacity-30"></div>
+          <div className="w-20 h-20 rounded-full bg-amber-200 bg-opacity-40 border-2 border-amber-900 border-opacity-30
             flex items-center justify-center overflow-hidden flex-shrink-0">
             {avatarPreview
               ? <img src={avatarPreview} className="w-full h-full object-cover" alt="avatar"/>
-              : <User size={28} className="text-gray-300"/>
+              : <span className="text-amber-900 text-lg" style={{fontFamily: 'Georgia, serif'}}>•</span>
             }
           </div>
           <div>
-            <p className="font-medium text-gray-700 mb-1.5">Ảnh đại diện</p>
-            <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5
-              bg-blue-50 text-blue-700 text-sm rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
+            <p className="font-light text-amber-950 mb-2" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>Ảnh Đại Diện</p>
+            <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2
+              bg-amber-900 text-amber-50 text-sm transition-colors hover:bg-amber-950 font-light" style={{fontFamily: 'Georgia, serif'}}>
               Chọn ảnh
               <input type="file" accept=".jpg,.jpeg,.png" className="hidden" onChange={handleAvatarChange}/>
             </label>
-            <p className="text-xs text-gray-400 mt-1">JPG, PNG</p>
+            <p className="text-xs text-amber-700 mt-1 font-light" style={{fontFamily: 'Georgia, serif'}}>JPG, PNG</p>
           </div>
         </div>
 
         {/* Thông tin cơ bản */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
-          <h3 className="font-semibold text-gray-700 pb-2 border-b border-gray-100">Thông tin cơ bản</h3>
+        <div className="relative bg-gradient-to-b from-amber-100 to-amber-50 rounded-sm border-2 border-amber-900 border-opacity-20 shadow-lg p-6 space-y-4" style={{boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)'}}>
+          <div className="absolute top-2 left-2 w-4 h-4 border-t border-l border-amber-800 opacity-30"></div>
+          <h3 className="font-light text-amber-950 pb-3 border-b-2 border-amber-900 border-opacity-20" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.08em'}}>Thông Tin Cơ Bản</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             <Field label="Họ và tên *">
@@ -289,9 +291,10 @@ export default function MemberFormPage() {
 
         {/* Quan hệ gia đình — theo loại quan hệ */}
         {(!isEdit && relationType === 'child') && (
-          <div className="bg-white rounded-xl border border-blue-100 shadow-sm p-5 space-y-4">
-            <h3 className="font-semibold text-blue-700 pb-2 border-b border-blue-100">
-              👪 Chọn cha / mẹ
+          <div className="relative bg-gradient-to-b from-amber-100 to-amber-50 rounded-sm border-2 border-amber-900 border-opacity-20 shadow-lg p-6 space-y-4" style={{boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)'}}>
+            <div className="absolute top-2 left-2 w-4 h-4 border-t border-l border-amber-800 opacity-30"></div>
+            <h3 className="font-light text-amber-950 pb-3 border-b-2 border-amber-900 border-opacity-20" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.08em'}}>
+              Chọn Cha / Mẹ
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Cha">
@@ -318,9 +321,10 @@ export default function MemberFormPage() {
         )}
 
         {(!isEdit && relationType === 'spouse') && (
-          <div className="bg-white rounded-xl border border-pink-100 shadow-sm p-5 space-y-4">
-            <h3 className="font-semibold text-pink-700 pb-2 border-b border-pink-100">
-              💍 Thông tin hôn nhân
+          <div className="relative bg-gradient-to-b from-amber-100 to-amber-50 rounded-sm border-2 border-amber-900 border-opacity-20 shadow-lg p-6 space-y-4" style={{boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)'}}>
+            <div className="absolute top-2 left-2 w-4 h-4 border-t border-l border-amber-800 opacity-30"></div>
+            <h3 className="font-light text-amber-950 pb-3 border-b-2 border-amber-900 border-opacity-20" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.08em'}}>
+              Thông Tin Hôn Nhân
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label={form.gender === 'male' ? 'Vợ *' : 'Chồng *'}>
@@ -346,8 +350,9 @@ export default function MemberFormPage() {
         )}
 
         {(isEdit) && (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
-            <h3 className="font-semibold text-gray-700 pb-2 border-b border-gray-100">Quan hệ gia đình</h3>
+          <div className="relative bg-gradient-to-b from-amber-100 to-amber-50 rounded-sm border-2 border-amber-900 border-opacity-20 shadow-lg p-6 space-y-4" style={{boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)'}}>
+            <div className="absolute top-2 left-2 w-4 h-4 border-t border-l border-amber-800 opacity-30"></div>
+            <h3 className="font-light text-amber-950 pb-3 border-b-2 border-amber-900 border-opacity-20" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.08em'}}>Quan Hệ Gia Đình</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Cha">
                 <select className="inp" value={form.fatherId}
@@ -371,20 +376,21 @@ export default function MemberFormPage() {
           </div>
         )}
 
-        <div className="flex gap-3 justify-end">
+        <div className="flex gap-3 justify-end pt-4">
           <button type="button" onClick={() => navigate(-1)}
-            className="px-4 py-2.5 border border-gray-200 rounded-xl text-gray-600
-              hover:bg-gray-50 font-medium transition-colors text-sm">Hủy</button>
+            className="px-6 py-2.5 border-2 border-amber-900 border-opacity-30 text-amber-900
+              hover:bg-amber-200 font-light transition-colors text-sm" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>
+            Hủy
+          </button>
           <button type="submit" disabled={loading}
-            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white
-              rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm">
-            <Save size={15}/>
+            className="px-6 py-2.5 bg-amber-900 text-amber-50
+              hover:bg-amber-950 disabled:opacity-50 transition-colors text-sm font-light" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>
             {loading ? 'Đang lưu...' : (isEdit ? 'Cập nhật' : 'Thêm mới')}
           </button>
         </div>
       </form>
 
-      <style>{`.inp{width:100%;border:1px solid #e5e7eb;border-radius:0.5rem;padding:0.5rem 0.75rem;font-size:0.875rem;outline:none;transition:all .2s}.inp:focus{border-color:#3b82f6;box-shadow:0 0 0 2px #bfdbfe}`}</style>
+      <style>{`.inp{width:100%;border:2px solid rgba(139,90,43,0.3);border-radius:0;padding:0.625rem 1rem;font-size:0.875rem;outline:none;transition:all .2s;background-color:rgba(255,255,255,0.7);color:#3d2817}.inp:focus{border-color:#8b5a2b;box-shadow:0 0 0 0 transparent}.inp::placeholder{color:rgba(139,90,43,0.5)}`}</style>
     </div>
   )
 }
@@ -392,7 +398,7 @@ export default function MemberFormPage() {
 function Field({ label, children }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-600 mb-1">{label}</label>
+      <label className="block text-sm font-light text-amber-900 mb-2" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>{label}</label>
       {children}
     </div>
   )

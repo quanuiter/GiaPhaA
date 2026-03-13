@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../store/authStore'
 import { treeApi } from '../services/api'
-import { Users, CalendarDays, TrendingUp } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 export default function DashboardPage() {
@@ -24,78 +23,95 @@ export default function DashboardPage() {
   const maxGen = members.length ? Math.max(...members.map(m => m.generation)) : 0
 
   const stats = [
-    { label: 'Tổng thành viên', value: members.length, icon: Users,        color: 'blue',   sub: `${alive} còn sống · ${dead} đã mất` },
-    { label: 'Số thế hệ',       value: maxGen,          icon: TrendingUp,   color: 'green',  sub: 'thế hệ trong gia phả' },
-    { label: 'Sự kiện sắp tới', value: events.length,   icon: CalendarDays, color: 'orange', sub: 'trong thời gian tới' },
+    { label: 'Tổng thành viên', value: members.length, sub: `${alive} còn sống · ${dead} đã mất` },
+    { label: 'Số thế hệ', value: maxGen, sub: 'thế hệ trong gia phả' },
+    { label: 'Sự kiện sắp tới', value: events.length, sub: 'trong thời gian tới' },
   ]
 
-  const colorMap = {
-    blue:   'bg-blue-50 text-blue-700 border-blue-100',
-    green:  'bg-green-50 text-green-700 border-green-100',
-    orange: 'bg-orange-50 text-orange-700 border-orange-100',
-  }
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-gray-800">{currentTree?.name}</h2>
-        <p className="text-gray-400 text-sm">Tổng quan cây gia phả</p>
+        <h2 className="text-3xl font-light text-amber-950 mb-1" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.1em'}}>{currentTree?.name}</h2>
+        <p className="text-amber-700 text-sm font-light" style={{fontFamily: 'Georgia, serif'}}>Tổng quan cây gia phả</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {stats.map(({ label, value, icon: Icon, color, sub }) => (
-          <div key={label} className={`bg-white rounded-xl border p-5 flex items-center gap-4 shadow-sm ${colorMap[color]}`}>
-            <div className={`p-3 rounded-xl ${colorMap[color]}`}><Icon size={22}/></div>
-            <div>
-              <p className="text-3xl font-bold text-gray-800">{value}</p>
-              <p className="font-medium text-sm text-gray-700">{label}</p>
-              <p className="text-xs text-gray-400">{sub}</p>
+      {/* Decorative divider */}
+      <div className="flex justify-center items-center gap-3">
+        <div className="flex-1 h-px bg-gradient-to-r from-transparent to-amber-900 opacity-30"></div>
+        <div className="text-amber-800 opacity-40" style={{fontSize: '0.8rem'}}>※</div>
+        <div className="flex-1 h-px bg-gradient-to-l from-transparent to-amber-900 opacity-30"></div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {stats.map(({ label, value, sub }) => (
+          <div key={label} className="relative bg-gradient-to-b from-amber-100 to-amber-50 rounded-sm border-2 border-amber-900 border-opacity-20 p-8 shadow-lg" style={{boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)'}}>
+            <div className="absolute top-2 left-2 w-4 h-4 border-t border-l border-amber-800 opacity-30"></div>
+            <div className="absolute top-2 right-2 w-4 h-4 border-t border-r border-amber-800 opacity-30"></div>
+            <div className="text-center">
+              <p className="text-4xl font-light text-amber-950 mb-2" style={{fontFamily: 'Georgia, serif'}}>{value}</p>
+              <p className="font-light text-amber-900 text-sm" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>{label}</p>
+              <p className="text-xs text-amber-700 font-light mt-2" style={{fontFamily: 'Georgia, serif'}}>{sub}</p>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-gray-700">Thành viên gần đây</h3>
-            <Link to="/members" className="text-blue-600 text-sm hover:underline">Xem tất cả →</Link>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="relative bg-gradient-to-b from-amber-100 to-amber-50 rounded-sm border-2 border-amber-900 border-opacity-20 p-8 shadow-lg" style={{boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)'}}>
+          <div className="absolute top-3 left-3 w-5 h-5 border-t border-l border-amber-800 opacity-30"></div>
+          <div className="absolute top-3 right-3 w-5 h-5 border-t border-r border-amber-800 opacity-30"></div>
+          <div className="absolute bottom-3 left-3 w-5 h-5 border-b border-l border-amber-800 opacity-30"></div>
+          <div className="absolute bottom-3 right-3 w-5 h-5 border-b border-r border-amber-800 opacity-30"></div>
+          
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="font-light text-amber-950 text-lg" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.08em'}}>Thành Viên Gần Đây</h3>
+            <Link to="/members" className="text-amber-900 hover:text-amber-800 text-sm font-light transition" style={{fontFamily: 'Georgia, serif'}}>Xem tất cả →</Link>
           </div>
-          <div className="space-y-2">
+          
+          {/* Divider */}
+          <div className="h-px bg-amber-900 opacity-20 mb-4"></div>
+          
+          <div className="space-y-3">
             {members.slice(-5).reverse().map(m => (
               <Link to={`/members/${m.id}`} key={m.id}
-                className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors">
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold
-                  ${m.gender === 'male' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>
+                className="flex items-center gap-3 p-2 hover:bg-amber-200 hover:bg-opacity-40 transition-colors">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${m.gender === 'male' ? 'bg-amber-200 text-amber-800' : 'bg-amber-100 text-amber-700'}`}>
                   {m.fullName.split(' ').pop()[0]}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm text-gray-800 truncate">{m.fullName}</p>
-                  <p className="text-xs text-gray-400">Đời {m.generation}</p>
+                  <p className="font-light text-sm text-amber-950 truncate" style={{fontFamily: 'Georgia, serif'}}>{m.fullName}</p>
+                  <p className="text-xs text-amber-700 font-light">Đời {m.generation}</p>
                 </div>
-                {m.isDeceased && <span className="text-xs text-gray-400">✞</span>}
+                {m.isDeceased && <span className="text-xs text-amber-800 font-light">✞</span>}
               </Link>
             ))}
-            {!members.length && <p className="text-center text-gray-400 py-6 text-sm">Chưa có thành viên</p>}
+            {!members.length && <p className="text-center text-amber-700 py-6 text-sm font-light">Chưa có thành viên</p>}
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-gray-700">Sự kiện sắp tới</h3>
-            <Link to="/events" className="text-blue-600 text-sm hover:underline">Xem tất cả →</Link>
+        <div className="relative bg-gradient-to-b from-amber-100 to-amber-50 rounded-sm border-2 border-amber-900 border-opacity-20 p-8 shadow-lg" style={{boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)'}}>
+          <div className="absolute top-3 left-3 w-5 h-5 border-t border-l border-amber-800 opacity-30"></div>
+          <div className="absolute top-3 right-3 w-5 h-5 border-t border-r border-amber-800 opacity-30"></div>
+          <div className="absolute bottom-3 left-3 w-5 h-5 border-b border-l border-amber-800 opacity-30"></div>
+          <div className="absolute bottom-3 right-3 w-5 h-5 border-b border-r border-amber-800 opacity-30"></div>
+          
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="font-light text-amber-950 text-lg" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.08em'}}>Sự Kiện Sắp Tới</h3>
+            <Link to="/events" className="text-amber-900 hover:text-amber-800 text-sm font-light transition" style={{fontFamily: 'Georgia, serif'}}>Xem tất cả →</Link>
           </div>
-          <div className="space-y-2">
+          
+          {/* Divider */}
+          <div className="h-px bg-amber-900 opacity-20 mb-4"></div>
+          
+          <div className="space-y-3">
             {events.map(ev => (
-              <div key={ev.id} className="flex items-center gap-3 p-3 bg-orange-50 rounded-xl">
-                <span className="text-xl">{ev.type === 'anniversary' ? '🕯️' : '📅'}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm text-gray-800 truncate">{ev.name}</p>
-                  <p className="text-xs text-gray-500">{new Date(ev.eventDate).toLocaleDateString('vi-VN')}</p>
-                </div>
+              <div key={ev.id} className="p-3 bg-amber-200 bg-opacity-20 rounded-sm border border-amber-900 border-opacity-20">
+                <p className="font-light text-sm text-amber-950 truncate" style={{fontFamily: 'Georgia, serif'}}>{ev.name}</p>
+                <p className="text-xs text-amber-700 font-light mt-1">{new Date(ev.eventDate).toLocaleDateString('vi-VN')}</p>
+                {ev.location && <p className="text-xs text-amber-700 font-light">• {ev.location}</p>}
               </div>
             ))}
-            {!events.length && <p className="text-center text-gray-400 py-6 text-sm">Không có sự kiện sắp tới</p>}
+            {!events.length && <p className="text-center text-amber-700 py-6 text-sm font-light">Không có sự kiện sắp tới</p>}
           </div>
         </div>
       </div>

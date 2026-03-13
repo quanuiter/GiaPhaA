@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../store/authStore'
 import { treeApi } from '../services/api'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Pencil, Skull, Plus, Trash2, X, Check } from 'lucide-react'
 import { useState } from 'react'
 
 // ── Dữ liệu tĩnh ──────────────────────────────────────────────
@@ -197,34 +196,34 @@ export default function MemberDetailPage() {
     <div className="max-w-4xl mx-auto space-y-5">
       {/* ── Header ── */}
       <div className="flex items-start justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <button onClick={() => navigate(-1)}
-            className="p-2 text-gray-500 hover:bg-gray-100 rounded-xl transition-colors">
-            <ArrowLeft size={18}/>
+            className="p-2 text-amber-900 hover:bg-amber-200 transition-colors" style={{fontFamily: 'Georgia, serif'}}>
+            ←
           </button>
           <div className="flex items-center gap-3">
-            <div className={`w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center text-xl font-light
               overflow-hidden flex-shrink-0
-              ${m.gender==='male'?'bg-blue-100 text-blue-700':'bg-pink-100 text-pink-700'}`}>
+              ${m.gender==='male'?'bg-amber-300 text-amber-900':'bg-amber-200 text-amber-800'}`}>
               {m.avatarUrl
                 ? <img src={`http://localhost:3001${m.avatarUrl}`} className="w-full h-full object-cover" alt=""/>
                 : m.fullName.split(' ').pop()[0]
               }
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-800">{m.fullName}</h2>
-              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                <span className={`text-xs px-2 py-0.5 rounded-full
-                  ${m.gender==='male'?'bg-blue-100 text-blue-700':'bg-pink-100 text-pink-700'}`}>
+              <h2 className="text-xl font-light text-amber-950" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>{m.fullName}</h2>
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <span className={`text-xs px-2 py-0.5 font-light
+                  ${m.gender==='male'?'bg-amber-300 text-amber-900':'bg-amber-200 text-amber-800'}`}>
                   {m.gender==='male'?'Nam':'Nữ'}
                 </span>
-                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                <span className="text-xs bg-amber-300 text-amber-900 px-2 py-0.5 font-light">
                   Đời {m.generation}
                 </span>
-                <span className="text-xs text-gray-400">#{m.id}</span>
+                <span className="text-xs text-amber-700 font-light">#{m.id}</span>
                 {m.isDeceased
-                  ? <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">✞ Đã mất</span>
-                  : <span className="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full">● Còn sống</span>
+                  ? <span className="text-xs bg-amber-200 text-amber-900 px-2 py-0.5 font-light">✞ Đã mất</span>
+                  : <span className="text-xs bg-amber-300 text-amber-900 px-2 py-0.5 font-light">• Còn sống</span>
                 }
               </div>
             </div>
@@ -233,15 +232,15 @@ export default function MemberDetailPage() {
         {canEdit && (
           <div className="flex gap-2">
             <Link to={`/members/${id}/edit`}
-              className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 rounded-xl
-                text-gray-600 hover:bg-gray-50 text-sm transition-colors">
-              <Pencil size={14}/> Sửa
+              className="px-4 py-2 border-2 border-amber-900 border-opacity-30 text-amber-900
+                hover:bg-amber-200 text-sm transition-colors font-light" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>
+              Sửa
             </Link>
             {!m.isDeceased && (
               <button onClick={() => setShowDeathForm(true)}
-                className="flex items-center gap-1.5 px-3 py-2 bg-red-500 text-white
-                  rounded-xl text-sm hover:bg-red-600 transition-colors">
-                <Skull size={14}/> Ghi nhận mất
+                className="px-4 py-2 bg-amber-900 text-amber-50
+                  hover:bg-amber-950 text-sm transition-colors font-light" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>
+                Ghi Nhận Mất
               </button>
             )}
           </div>
@@ -249,11 +248,11 @@ export default function MemberDetailPage() {
       </div>
 
       {/* ── Tabs ── */}
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
+      <div className="flex gap-2 bg-amber-200 bg-opacity-30 rounded-sm p-2 border-2 border-amber-900 border-opacity-20">
         {TABS.map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all
-              ${activeTab===tab.key?'bg-white text-blue-700 shadow-sm':'text-gray-500 hover:text-gray-700'}`}>
+            className={`flex-1 py-2 px-3 text-sm font-light transition-all ${activeTab===tab.key?'bg-amber-900 text-amber-50 shadow-md':'text-amber-900 hover:bg-amber-200 hover:bg-opacity-50'}`}
+            style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>
             {tab.label}
           </button>
         ))}
