@@ -1,0 +1,217 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ===== CÂY GIA PHẢ =====
+model FamilyTree {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(200)
+  description String?  @db.Text
+  logoUrl     String?  @db.VarChar(500)
+  bannerUrl   String?  @db.VarChar(500)
+  status      String   @default("active") // "active" | "closed"
+  createdBy   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Quan hệ
+  members     Member[]
+  events      FamilyEvent[]
+  configs     TreeConfig[]
+  userAccess  TreeUser[]    // Phân quyền theo từng cây
+  auditLogs   AuditLog[]
+
+  creator     User     @relation("TreeCreator", fields: [createdBy], references: [id])
+}
+
+// Phân quyền user trên từng cây (1 user có thể có role khác nhau ở mỗi cây)
+model TreeUser {
+  id           Int        @id @default(autoincrement())
+  treeId       Int
+  userId       Int
+  role         String     @default("viewer") // "admin" | "editor" | "viewer"
+  createdAt    DateTime   @default(now())
+
+  tree         FamilyTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id])
+
+  @@unique([treeId, userId]) // Mỗi user chỉ có 1 role trong 1 cây
+  @@index([treeId])
+  @@index([userId])
+}
+
+// Cấu hình riêng cho từng cây
+model TreeConfig {
+  id      Int        @id @default(autoincrement())
+  treeId  Int
+  key     String     @db.VarChar(100)
+  value   String     @db.VarChar(500)
+
+  tree    FamilyTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
+
+  @@unique([treeId, key])
+  @@index([treeId])
+}
+
+// ===== THÀNH VIÊN =====
+model Member {
+  id               Int        @id @default(autoincrement())
+  treeId           Int                          // <- thuộc cây nào
+  fullName         String     @db.VarChar(100)
+  nickname         String?    @db.VarChar(100)
+  gender           String     // "male" | "female"
+  birthDate        DateTime?
+  birthPlace       String?    @db.VarChar(200)
+  occupation       String?    @db.VarChar(100)
+  hometown         String?    @db.VarChar(200)
+  generation       Int        @default(1)
+  avatarUrl        String?    @db.VarChar(500)
+  isDeceased       Boolean    @default(false)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  fatherId         Int?
+  motherId         Int?
+  father           Member?    @relation("FatherChildren", fields: [fatherId], references: [id])
+  mother           Member?    @relation("MotherChildren", fields: [motherId], references: [id])
+  childrenAsFather Member[]   @relation("FatherChildren")
+  childrenAsMother Member[]   @relation("MotherChildren")
+
+  tree             FamilyTree   @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  death            Death?
+  achievements     Achievement[]
+  marriagesAsH     Marriage[]   @relation("Husband")
+  marriagesAsW     Marriage[]   @relation("Wife")
+  events           FamilyEvent[]
+  user             User?
+  auditLogs        AuditLog[]
+
+  @@index([treeId])
+  @@index([fatherId])
+  @@index([motherId])
+  @@index([generation])
+}
+
+model Marriage {
+  id           Int       @id @default(autoincrement())
+  treeId       Int                              // <- thuộc cây nào
+  husbandId    Int
+  wifeId       Int
+  marriageDate DateTime?
+  status       String    @default("living")    // "living" | "divorced" | "widowed"
+  divorceDate  DateTime?
+  note         String?   @db.Text
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  husband      Member    @relation("Husband", fields: [husbandId], references: [id])
+  wife         Member    @relation("Wife", fields: [wifeId], references: [id])
+
+  @@index([treeId])
+}
+
+model Death {
+  id          Int      @id @default(autoincrement())
+  memberId    Int      @unique
+  deathDate   DateTime
+  cause       String   @default("natural")
+  burialPlace String   @default("cemetery")
+  longevity   Int?
+  note        String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  member      Member   @relation(fields: [memberId], references: [id])
+}
+
+model Achievement {
+  id          Int      @id @default(autoincrement())
+  memberId    Int
+  type        String
+  level       String
+  year        Int
+  description String   @db.Text
+  issuedBy    String?  @db.VarChar(200)
+  createdAt   DateTime @default(now())
+
+  member      Member   @relation(fields: [memberId], references: [id])
+}
+
+model FamilyEvent {
+  id              Int        @id @default(autoincrement())
+  treeId          Int                              // <- thuộc cây nào
+  type            String     // "anniversary" | "meeting" | "other"
+  name            String     @db.VarChar(200)
+  lunarDate       String?    @db.VarChar(20)
+  eventDate       DateTime
+  location        String?    @db.VarChar(300)
+  note            String?    @db.Text
+  relatedMemberId Int?
+  canDelete       Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+
+  tree            FamilyTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  relatedMember   Member?    @relation(fields: [relatedMemberId], references: [id])
+
+  @@index([treeId])
+}
+
+// ===== TÀI KHOẢN (global, không gắn với cây) =====
+model User {
+  id           Int          @id @default(autoincrement())
+  username     String       @unique @db.VarChar(50)
+  passwordHash String       @db.VarChar(255)
+  status       String       @default("active")   // "active" | "locked"
+  memberId     Int?         @unique               // profile thành viên gia phả (tùy chọn)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  member       Member?      @relation(fields: [memberId], references: [id])
+  treeAccess   TreeUser[]   // Quyền trong từng cây
+  createdTrees FamilyTree[] @relation("TreeCreator")
+  auditLogs    AuditLog[]
+}
+
+// ===== CẤU HÌNH TOÀN HỆ THỐNG =====
+model SystemConfig {
+  key         String   @id @db.VarChar(100)
+  value       String   @db.VarChar(500)
+  description String?  @db.VarChar(300)
+  updatedAt   DateTime @updatedAt
+  updatedBy   Int?
+}
+
+model AuditLog {
+  id        Int        @id @default(autoincrement())
+  treeId    Int?                                   // <- log thuộc cây nào (null = hành động global)
+  userId    Int?
+  memberId  Int?
+  action    String     @db.VarChar(100)
+  tableName String     @db.VarChar(50)
+  recordId  Int?
+  note      String?    @db.Text
+  createdAt DateTime   @default(now())
+
+  tree      FamilyTree? @relation(fields: [treeId], references: [id])
+  user      User?       @relation(fields: [userId], references: [id])
+  member    Member?     @relation(fields: [memberId], references: [id])
+
+  @@index([treeId])
+}
+
+// Danh mục có thể tùy chỉnh theo từng cây
+model Category {
+  id        Int     @id @default(autoincrement())
+  treeId    Int?                                   // null = danh mục mặc định toàn hệ thống
+  type      String  @db.VarChar(50)
+  value     String  @db.VarChar(50)
+  label     String  @db.VarChar(100)
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
+
+  @@index([treeId])
+}
