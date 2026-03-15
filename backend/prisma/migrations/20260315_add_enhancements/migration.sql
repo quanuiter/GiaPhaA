@@ -1,6 +1,9 @@
 -- ===== Enhancements to Member model =====
--- Add bioNote field for longer biographical information
-ALTER TABLE `Member` ADD COLUMN `bioNote` LONGTEXT;
+-- Add bio field for biographical information
+ALTER TABLE `Member` ADD COLUMN `bio` LONGTEXT;
+
+-- Add address field for current address
+ALTER TABLE `Member` ADD COLUMN `address` VARCHAR(255);
 
 -- Add deathDate field (alternative to Death model, for convenience)
 ALTER TABLE `Member` ADD COLUMN `deathDate` DATETIME;
@@ -8,7 +11,7 @@ ALTER TABLE `Member` ADD COLUMN `deathDate` DATETIME;
 -- Add deletedAt field for soft deletes
 ALTER TABLE `Member` ADD COLUMN `deletedAt` DATETIME;
 
--- Add index for deleted records
+-- Add indexes for frequent queries
 CREATE INDEX `idx_Member_deletedAt` ON `Member`(`deletedAt`);
 
 -- ===== Enhancements to Marriage model =====

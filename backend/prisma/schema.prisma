@@ -70,7 +70,8 @@ model Member {
   deathDate        DateTime?                   // (NEW) Ngày mất (alternative to Death model)
   occupation       String?    @db.VarChar(100)
   hometown         String?    @db.VarChar(200)
-  bioNote          String?    @db.Text        // (NEW) Tiểu sử / ghi chú dài
+  address          String?    @db.VarChar(255) // (NEW) Địa chỉ hiện tại
+  bio              String?    @db.Text         // (NEW) Tiểu sử / ghi chú dài
   generation       Int        @default(1)
   avatarUrl        String?    @db.VarChar(500)
   isDeceased       Boolean    @default(false)
