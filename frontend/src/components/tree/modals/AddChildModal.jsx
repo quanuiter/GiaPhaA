@@ -87,25 +87,25 @@ export default function AddChildModal({ member, onClose }) {
 
   return (
     <FloatModal
-      title="👶 Thêm con"
+      title="Thêm con"
       subtitle={`Con của: ${member?.fullName}`}
       onClose={onClose} width={540}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
         <div style={{
-          width: 60, height: 60, borderRadius: '50%', background: '#f3f4f6',
-          border: '2px dashed #d1d5db', overflow: 'hidden', flexShrink: 0,
+          width: 60, height: 60, borderRadius: '50%', background: '#fef3c7',
+          border: '2px dashed #d4c9b8', overflow: 'hidden', flexShrink: 0,
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
         }} onClick={() => fileRef.current?.click()}>
           {preview
             ? <img src={preview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt=""/>
-            : <span style={{ fontSize: 24 }}>📷</span>
+            : <span style={{ fontSize: 14, color: '#8b5a2b' }}>Ảnh</span>
           }
         </div>
         <div>
           <button onClick={() => fileRef.current?.click()} style={{
-            padding: '5px 12px', border: '1px solid #d1d5db', borderRadius: 6,
-            background: '#fff', cursor: 'pointer', fontSize: 12, color: '#374151',
+            padding: '5px 12px', border: '1px solid #d4c9b8', borderRadius: 6,
+            background: '#fef3c7', cursor: 'pointer', fontSize: 12, color: '#8b5a2b',
           }}>Ảnh đại diện (JPG/PNG)</button>
         </div>
         <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png"
@@ -127,11 +127,12 @@ export default function AddChildModal({ member, onClose }) {
                   <option key={sp.id} value={sp.id}>{sp.fullName}</option>
                 ))}
               </Select>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '14px', cursor: 'pointer' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', cursor: 'pointer', color: '#8b5a2b' }}>
                 <input 
                   type="checkbox" 
                   checked={form.isAdopted} 
                   onChange={(e) => setForm(f => ({ ...f, isAdopted: e.target.checked, otherParentId: '' }))} 
+                  style={{ cursor: 'pointer' }}
                 />
                 Nhận nuôi / Không rõ
               </label>
@@ -164,7 +165,7 @@ export default function AddChildModal({ member, onClose }) {
       </Section>
 
       <ModalButtons onCancel={onClose} onOk={handleSave}
-        loading={mutation.isPending} okLabel="➕ Thêm con" okColor="#10b981"/>
+        loading={mutation.isPending} okLabel="Thêm con" okColor="#b45309"/>
     </FloatModal>
   )
 }

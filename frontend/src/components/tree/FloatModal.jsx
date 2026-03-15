@@ -18,14 +18,14 @@ export function FloatModal({ title, subtitle, onClose, children, width = 480 }) 
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>{title}</div>
-            {subtitle && <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{subtitle}</div>}
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#78350f' }}>{title}</div>
+            {subtitle && <div style={{ fontSize: 12, color: '#a16207', marginTop: 2 }}>{subtitle}</div>}
           </div>
           <button onClick={onClose} style={{
-            border: 'none', background: '#f3f4f6', borderRadius: 8,
+            border: 'none', background: '#fef3c7', borderRadius: 8,
             width: 30, height: 30, cursor: 'pointer', fontSize: 15, lineHeight: 1,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#6b7280', flexShrink: 0, marginLeft: 12,
+            color: '#8b5a2b', flexShrink: 0, marginLeft: 12,
           }}>✕</button>
         </div>
         {children}
@@ -39,9 +39,9 @@ export function Section({ title, children }) {
   return (
     <div style={{ marginBottom: 4 }}>
       <div style={{
-        fontSize: 11, fontWeight: 700, color: '#6b7280',
+        fontSize: 11, fontWeight: 700, color: '#8b5a2b',
         textTransform: 'uppercase', letterSpacing: 0.8,
-        borderBottom: '1px solid #f3f4f6', paddingBottom: 5, marginBottom: 12,
+        borderBottom: '1px solid #fef3c7', paddingBottom: 5, marginBottom: 12,
       }}>
         {title}
       </div>
@@ -65,9 +65,9 @@ export function Field({ label, required, span, children }) {
     <div style={{ marginBottom: 12, gridColumn: span ? `span ${span}` : undefined }}>
       <label style={{
         display: 'block', fontSize: 11.5, fontWeight: 600,
-        color: '#6b7280', marginBottom: 5,
+        color: '#8b5a2b', marginBottom: 5,
       }}>
-        {label}{required && <span style={{ color: '#ef4444', marginLeft: 2 }}>*</span>}
+        {label}{required && <span style={{ color: '#b45309', marginLeft: 2 }}>*</span>}
       </label>
       {children}
     </div>
@@ -76,25 +76,25 @@ export function Field({ label, required, span, children }) {
 
 // ─── Base style ────────────────────────────────────────────────
 const base = {
-  width: '100%', border: '1px solid #d1d5db', borderRadius: 8,
+  width: '100%', border: '1px solid #d4c9b8', borderRadius: 8,
   padding: '7px 10px', fontSize: 13, outline: 'none',
-  boxSizing: 'border-box', fontFamily: 'inherit', color: '#111827',
-  background: '#fff', transition: 'border-color .15s',
+  boxSizing: 'border-box', fontFamily: 'inherit', color: '#5a3a1f',
+  background: '#fffbf5', transition: 'border-color .15s',
 }
-const focus = e => { e.target.style.borderColor = '#3b82f6'; e.target.style.boxShadow = '0 0 0 3px #dbeafe' }
-const blur  = e => { e.target.style.borderColor = '#d1d5db'; e.target.style.boxShadow = 'none' }
+const focus = e => { e.target.style.borderColor = '#b45309'; e.target.style.boxShadow = '0 0 0 3px #fed7aa' }
+const blur  = e => { e.target.style.borderColor = '#d4c9b8'; e.target.style.boxShadow = 'none' }
 
 export function Input({ type = 'text', value, onChange, placeholder, maxLength, min, max, disabled }) {
   return <input type={type} value={value} onChange={onChange} placeholder={placeholder}
     maxLength={maxLength} min={min} max={max} disabled={disabled}
-    style={{ ...base, background: disabled ? '#f9fafb' : '#fff', cursor: disabled ? 'not-allowed' : undefined }}
+    style={{ ...base, background: disabled ? '#f5f1e8' : '#fffbf5', cursor: disabled ? 'not-allowed' : undefined }}
     onFocus={focus} onBlur={blur}/>
 }
 
 export function Select({ value, onChange, children, disabled }) {
   return (
     <select value={value} onChange={onChange} disabled={disabled}
-      style={{ ...base, cursor: disabled ? 'not-allowed' : 'pointer', background: disabled ? '#f9fafb' : '#fff', appearance: 'auto' }}
+      style={{ ...base, cursor: disabled ? 'not-allowed' : 'pointer', background: disabled ? '#f5f1e8' : '#fffbf5', appearance: 'auto' }}
       onFocus={focus} onBlur={blur}>
       {children}
     </select>
@@ -121,22 +121,22 @@ export function InfoBanner({ color = '#1d4ed8', bg = '#eff6ff', border, children
 }
 
 // ─── Nút hành động ────────────────────────────────────────────
-export function ModalButtons({ onCancel, onOk, okLabel = 'Lưu', okColor = '#3b82f6', loading, danger }) {
+export function ModalButtons({ onCancel, onOk, okLabel = 'Lưu', okColor = '#b45309', loading, danger }) {
   return (
-    <div style={{ display: 'flex', gap: 8, marginTop: 20, justifyContent: 'flex-end', borderTop: '1px solid #f3f4f6', paddingTop: 16 }}>
+    <div style={{ display: 'flex', gap: 8, marginTop: 20, justifyContent: 'flex-end', borderTop: '1px solid #fef3c7', paddingTop: 16 }}>
       <button onClick={onCancel} style={{
-        padding: '8px 18px', border: '1px solid #d1d5db',
-        borderRadius: 8, background: '#fff', cursor: 'pointer',
-        fontSize: 13, color: '#374151', fontWeight: 500,
+        padding: '8px 18px', border: '1px solid #d4c9b8',
+        borderRadius: 8, background: '#fffbf5', cursor: 'pointer',
+        fontSize: 13, color: '#8b5a2b', fontWeight: 500,
       }}>Hủy</button>
       <button onClick={onOk} disabled={loading} style={{
         padding: '8px 22px', border: 'none', borderRadius: 8,
-        background: danger ? '#dc2626' : okColor,
+        background: danger ? '#b45309' : okColor,
         color: '#fff', cursor: loading ? 'wait' : 'pointer',
         fontSize: 13, fontWeight: 700, opacity: loading ? 0.6 : 1,
         transition: 'opacity .15s',
       }}>
-        {loading ? '⏳ Đang lưu...' : okLabel}
+        {loading ? 'Đang lưu...' : okLabel}
       </button>
     </div>
   )

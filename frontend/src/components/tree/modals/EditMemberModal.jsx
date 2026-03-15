@@ -96,31 +96,30 @@ export default function EditMemberModal({ member, onClose }) {
 
   return (
     <FloatModal
-      title="✏️ Chỉnh sửa hồ sơ thành viên"
-      subtitle={`Mã: #${member?.id}`}
-      onClose={onClose}
-      width={520}
+      title="Chỉnh sửa hồ sơ"
+      subtitle={`${member?.fullName}`}
+      onClose={onClose} width={540}
     >
       {/* ── Ảnh đại diện ───────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
         <div style={{
           width: 70, height: 70, borderRadius: '50%',
-          background: '#f3f4f6', border: '2px dashed #d1d5db',
+          background: '#fef3c7', border: '2px dashed #d4c9b8',
           overflow: 'hidden', flexShrink: 0, cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }} onClick={() => fileRef.current?.click()}>
           {avatarPreview
             ? <img src={avatarPreview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt=""/>
-            : <span style={{ fontSize: 28 }}>📷</span>
+            : <span style={{ fontSize: 14, color: '#8b5a2b' }}>Ảnh</span>
           }
         </div>
         <div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#111827', marginBottom: 4 }}>Ảnh đại diện</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#5a3a1f', marginBottom: 4 }}>Ảnh đại diện</div>
           <button onClick={() => fileRef.current?.click()} style={{
-            padding: '5px 12px', border: '1px solid #d1d5db', borderRadius: 6,
-            background: '#fff', cursor: 'pointer', fontSize: 12, color: '#374151',
+            padding: '5px 12px', border: '1px solid #d4c9b8', borderRadius: 6,
+            background: '#fef3c7', cursor: 'pointer', fontSize: 12, color: '#8b5a2b',
           }}>Chọn ảnh (JPG / PNG)</button>
-          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>Tối đa 5 MB</div>
+          <div style={{ fontSize: 11, color: '#a16207', marginTop: 3 }}>Tối đa 5 MB</div>
         </div>
         <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png"
           style={{ display: 'none' }} onChange={handleAvatarChange}/>
@@ -138,8 +137,8 @@ export default function EditMemberModal({ member, onClose }) {
           </Field>
           <Field label="Giới tính">
             <Select value={form.gender} onChange={set('gender')}>
-              <option value="male">♂ Nam</option>
-              <option value="female">♀ Nữ</option>
+              <option value="male">Nam</option>
+              <option value="female">Nữ</option>
             </Select>
           </Field>
           <Field label="Ngày tháng năm sinh">
@@ -174,7 +173,7 @@ export default function EditMemberModal({ member, onClose }) {
       </Section>
 
       <ModalButtons onCancel={onClose} onOk={handleSave}
-        loading={mutation.isPending} okLabel="Cập nhật"/>
+        loading={mutation.isPending} okLabel="Cập nhật" okColor="#b45309"/>
     </FloatModal>
   )
 }

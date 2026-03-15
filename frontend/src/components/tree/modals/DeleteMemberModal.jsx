@@ -21,22 +21,22 @@ export default function DeleteMemberModal({ member, onClose }) {
   })
 
   return (
-    <FloatModal title="🗑 Xác nhận xóa thành viên" onClose={onClose} width={380}>
-      <p style={{ color: '#374151', fontSize: 14, lineHeight: 1.7, marginBottom: 14 }}>
-        Bạn có chắc muốn xóa <strong style={{ color: '#111827' }}>"{member?.fullName}"</strong>?
+    <FloatModal title="Xác nhận xóa thành viên" onClose={onClose} width={380}>
+      <p style={{ color: '#8b5a2b', fontSize: 14, lineHeight: 1.7, marginBottom: 14 }}>
+        Bạn có chắc muốn xóa <strong style={{ color: '#5a3a1f' }}>"{member?.fullName}"</strong>?
       </p>
       <div style={{
-        background: '#fef2f2', border: '1px solid #fecaca',
+        background: '#fef3c7', border: '1px solid #d4c9b8',
         borderRadius: 8, padding: '10px 14px',
-        fontSize: 12, color: '#991b1b', lineHeight: 1.8,
+        fontSize: 12, color: '#92400e', lineHeight: 1.8,
       }}>
-        ⚠️ <strong>Điều kiện xóa (theo QĐ1):</strong>
+        <strong>Điều kiện xóa (theo QĐ1):</strong>
         <ul style={{ margin: '4px 0 0 16px', paddingLeft: 0 }}>
           <li>Không có hậu duệ trong hệ thống</li>
           <li>Chưa được ghi nhận kết thúc (mất)</li>
         </ul>
-        <div style={{ marginTop: 6, color: '#dc2626' }}>
-          ⚠️ Thao tác này <strong>không thể hoàn tác</strong>.
+        <div style={{ marginTop: 6, color: '#b45309' }}>
+          Thao tác này <strong>không thể hoàn tác</strong>.
         </div>
       </div>
       <ModalButtons
