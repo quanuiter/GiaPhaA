@@ -69,6 +69,11 @@ model Member {
   birthPlace       String?    @db.VarChar(200)
   occupation       String?    @db.VarChar(100)
   hometown         String?    @db.VarChar(200)
+  address          String?    @db.VarChar(300)
+  bio              String?    @db.Text
+  birthDateLunar   String?    @db.VarChar(50)
+  phone            String?    @db.VarChar(20)
+  email            String?    @db.VarChar(100)
   generation       Int        @default(1)
   avatarUrl        String?    @db.VarChar(500)
   isDeceased       Boolean    @default(false)

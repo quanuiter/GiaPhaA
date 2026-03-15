@@ -64,18 +64,18 @@ function FamilyFlow({ data, edgeType }) {
       fitView fitViewOptions={{ padding: 0.12 }}
       minZoom={0.04} maxZoom={5}
       nodesDraggable nodesConnectable={false} deleteKeyCode={null}
-      style={{ background: '#f5f0e4' }}
+      style={{ background: '#faf6f0' }}
       attributionPosition="bottom-right"
     >
-      <Background variant="dots" gap={22} size={1.2} color="#c8bc9f"/>
+      <Background variant="dots" gap={22} size={1.2} color="#d4c9b8"/>
       <Controls showInteractive={false}/>
       <MiniMap
         nodeColor={n =>
-          n.data?.isDeceased ? '#9ca3af'
-          : n.data?.gender === 'male' ? '#3b82f6' : '#ec4899'
+          n.data?.isDeceased ? '#b89968'
+          : n.data?.gender === 'male' ? '#a16207' : '#d97706'
         }
-        maskColor="rgba(175,163,135,.5)"
-        style={{ borderRadius: 10, border: '1px solid #c8bc9f' }}
+        maskColor="rgba(180,140,100,.5)"
+        style={{ borderRadius: 10, border: '1px solid #d4c9b8' }}
       />
     </ReactFlow>
   )
@@ -146,29 +146,29 @@ export default function TreePage() {
       {/* ── Toolbar ─────────────────────────────────────── */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
-        padding: '8px 16px', background: '#fff',
-        borderBottom: '1px solid #e5e7eb', flexShrink: 0, zIndex: 10,
+        padding: '10px 16px', background: '#faf8f3',
+        borderBottom: '1px solid #e5dcc8', flexShrink: 0, zIndex: 10,
       }}>
         <span style={{ fontSize: 20 }}>🌳</span>
-        <span style={{ fontWeight: 700, fontSize: 15, color: '#111827' }}>Phả đồ</span>
+        <span style={{ fontWeight: 700, fontSize: 15, color: '#78350f' }}>Phả đồ</span>
         <span style={{
-          fontSize: 12, color: '#6b7280', background: '#f3f4f6',
+          fontSize: 12, color: '#8b5a2b', background: '#fef3c7',
           padding: '2px 10px', borderRadius: 20, fontWeight: 500,
         }}>{currentTree?.name}</span>
         {!isLoading && (
-          <span style={{ fontSize: 11, color: '#9ca3af' }}>
+          <span style={{ fontSize: 11, color: '#a16207' }}>
             {memberCount} thành viên · {marriageCount} hôn nhân
           </span>
         )}
 
         {/* Combobox đường nối con cái */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
-          <label style={{ fontSize: 12, color: '#6b7280', whiteSpace: 'nowrap' }}>
+          <label style={{ fontSize: 12, color: '#8b5a2b', whiteSpace: 'nowrap' }}>
             Đường nối:
           </label>
           <select value={edgeType} onChange={e => setEdgeType(e.target.value)} style={{
-            border: '1px solid #d1d5db', borderRadius: 8, padding: '5px 10px',
-            fontSize: 12, color: '#374151', background: '#fff',
+            border: '1px solid #d4c9b8', borderRadius: 8, padding: '5px 10px',
+            fontSize: 12, color: '#78350f', background: '#fef3c7',
             cursor: 'pointer', outline: 'none',
           }}>
             {EDGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -178,15 +178,16 @@ export default function TreePage() {
         {/* Legend */}
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           {[
-            { shape: 'rect', color: '#3b82f6', bg: '#93c5fd', label: 'Nam' },
-            { shape: 'rect', color: '#ec4899', bg: '#f9a8d4', label: 'Nữ' },
-            { shape: 'rect', color: '#9ca3af', bg: '#d1d5db', label: 'Đã mất' },
+            { shape: 'rect', color: '#a16207', bg: '#fed7aa', label: 'Nam' },
+            { shape: 'rect', color: '#d97706', bg: '#fde68a', label: 'Nữ' },
+            { shape: 'rect', color: '#b89968', bg: '#dcc9b6', label: 'Đã mất' },
             { shape: 'line', color: MARRIAGE_COLORS.living.stroke,   dash: false, label: 'Sống chung' },
             { shape: 'line', color: MARRIAGE_COLORS.divorced.stroke, dash: true,  label: 'Ly hôn' },
             { shape: 'line', color: MARRIAGE_COLORS.widowed.stroke,  dash: true,  label: 'Góa' },
+            { shape: 'line', color: '#c8b5a0', dash: true, label: 'Mẹ → Con' },
           ].map(({ shape, color, bg, label, dash }) => (
             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 4,
-              fontSize: 10.5, color: '#6b7280' }}>
+              fontSize: 10.5, color: '#8b5a2b' }}>
               {shape === 'rect'
                 ? <div style={{ width: 11, height: 11, borderRadius: 2, background: bg,
                     border: `2px solid ${color}` }}/>
@@ -206,28 +207,28 @@ export default function TreePage() {
       <div style={{ flex: 1, position: 'relative' }}>
         {isLoading && (
           <div style={{ position: 'absolute', inset: 0, zIndex: 20,
-            background: 'rgba(245,240,228,.85)',
+            background: 'rgba(250,246,240,.9)',
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: 44, height: 44, border: '4px solid #d4c9a8',
-              borderTopColor: '#3b82f6', borderRadius: '50%',
+            <div style={{ width: 44, height: 44, border: '4px solid #e5dcc8',
+              borderTopColor: '#d97706', borderRadius: '50%',
               animation: 'spin .8s linear infinite' }}/>
-            <p style={{ marginTop: 14, color: '#6b7280', fontSize: 14 }}>Đang tải phả đồ...</p>
+            <p style={{ marginTop: 14, color: '#8b5a2b', fontSize: 14 }}>Đang tải phả đồ...</p>
           </div>
         )}
         {!isLoading && error && (
-          <div style={{ position: 'absolute', inset: 0, background: '#f5f0e4',
+          <div style={{ position: 'absolute', inset: 0, background: '#faf6f0',
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             justifyContent: 'center', gap: 10 }}>
             <span style={{ fontSize: 48 }}>⚠️</span>
-            <p style={{ color: '#dc2626', fontSize: 14 }}>Lỗi tải phả đồ</p>
+            <p style={{ color: '#b45309', fontSize: 14 }}>Lỗi tải phả đồ</p>
           </div>
         )}
         {!isLoading && !error && memberCount === 0 && (
-          <div style={{ position: 'absolute', inset: 0, background: '#f5f0e4',
+          <div style={{ position: 'absolute', inset: 0, background: '#faf6f0',
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             justifyContent: 'center', gap: 12 }}>
             <span style={{ fontSize: 54 }}>🌱</span>
-            <p style={{ color: '#6b7280', fontSize: 16, fontWeight: 600 }}>Chưa có thành viên</p>
+            <p style={{ color: '#8b5a2b', fontSize: 16, fontWeight: 600 }}>Chưa có thành viên</p>
           </div>
         )}
         {!isLoading && memberCount > 0 && (

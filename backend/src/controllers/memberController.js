@@ -45,9 +45,8 @@ exports.create = async (req, res) => {
       return res.status(403).json({ message: 'Không có quyền' })
 
     const treeId = +req.params.treeId
-    const { fullName, nickname, gender, birthDate,
+    const { fullName, nickname, gender, birthDate, birthDateLunar, phone, email,
             generation, fatherId, motherId, birthPlace, occupation, hometown, isAdopted } = req.body
-
     if (!fullName?.trim()) return res.status(400).json({ message: 'Họ tên không được để trống' })
     if (birthDate && new Date(birthDate) > new Date())
       return res.status(400).json({ message: 'Ngày sinh không hợp lệ' })
@@ -60,6 +59,7 @@ const member = await prisma.member.create({
         fatherId:   fatherId   ? +fatherId   : null,
         motherId:   motherId   ? +motherId   : null,
         birthPlace, occupation, hometown,
+        birthDateLunar, phone, email,
         isAdopted:  isAdopted === 'true' || isAdopted === true, // Thêm dòng này
         avatarUrl: req.file ? `/uploads/${req.file.filename}` : null
       }

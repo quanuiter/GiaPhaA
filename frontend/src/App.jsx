@@ -13,7 +13,7 @@ import MemberDetailPage from './pages/MemberDetailPage'
 import MemberFormPage   from './pages/MemberFormPage'
 import TreePage         from './pages/TreePage'
 import EventsPage       from './pages/EventsPage'
-
+import ReportsPage      from './pages/ReportsPage'
 const qc = new QueryClient()
 
 export default function App() {
@@ -41,6 +41,7 @@ export default function App() {
                 <Route path="/members/:id"      element={<MemberDetailPage />} />
                 <Route path="/tree"      element={<TreePage />} />
                 <Route path="/events"    element={<EventsPage />} />
+                <Route path="/reports"   element={<ReportsPage />} />
               </Route>
             </Route>
           </Route>

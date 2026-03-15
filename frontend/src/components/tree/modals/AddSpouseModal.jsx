@@ -113,21 +113,21 @@ export default function AddSpouseModal({ member, onClose }) {
 
   return (
     <FloatModal
-      title={`💍 Thêm hôn thê — ${member?.fullName}`}
+      title={`Thêm hôn thê — ${member?.fullName}`}
       subtitle="Hệ thống sẽ kiểm tra huyết thống trước khi tạo"
       onClose={onClose} width={540}
     >
       {/* Toggle */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         {[
-          { v: true,  l: '✨ Tạo thành viên mới'   },
-          { v: false, l: '👥 Chọn thành viên có sẵn' },
+          { v: true,  l: 'Tạo thành viên mới'   },
+          { v: false, l: 'Chọn thành viên có sẵn' },
         ].map(({ v, l }) => (
           <button key={String(v)} onClick={() => setIsNew(v)} style={{
             flex: 1, padding: '8px', borderRadius: 8, cursor: 'pointer',
-            border: `2px solid ${isNew === v ? '#ec4899' : '#e5e7eb'}`,
-            background: isNew === v ? '#fdf2f8' : '#fff',
-            color: isNew === v ? '#be185d' : '#6b7280',
+            border: `2px solid ${isNew === v ? '#d97706' : '#d4c9b8'}`,
+            background: isNew === v ? '#fef3c7' : '#fff',
+            color: isNew === v ? '#b45309' : '#8b5a2b',
             fontWeight: isNew === v ? 700 : 400, fontSize: 12,
             transition: 'all .15s',
           }}>{l}</button>
@@ -149,8 +149,8 @@ export default function AddSpouseModal({ member, onClose }) {
               </Field>
               <Field label="Giới tính">
                 <Select value={spouseForm.gender} onChange={set('gender')}>
-                  <option value="male">♂ Nam</option>
-                  <option value="female">♀ Nữ</option>
+                  <option value="male">Nam</option>
+                  <option value="female">Nữ</option>
                 </Select>
               </Field>
               <Field label="Ngày sinh">
@@ -222,14 +222,14 @@ export default function AddSpouseModal({ member, onClose }) {
         </Grid2>
       </Section>
 
-      <InfoBanner color="#9d174d" bg="#fdf2f8">
+      <InfoBanner color="#b45309" bg="#fef3c7">
         Hệ thống sẽ kiểm tra huyết thống trực hệ (mặc định 3 đời) trước khi tạo hôn nhân.
         Đường nối trên phả đồ sẽ hiển thị theo trạng thái:
-        <strong> vàng = sống chung · đỏ nét đứt = ly hôn · xám nét đứt = góa.</strong>
+        <strong> nâu = sống chung · cam nét đứt = ly hôn · be nét đứt = góa.</strong>
       </InfoBanner>
 
       <ModalButtons onCancel={onClose} onOk={handleSave}
-        loading={loading} okLabel="💍 Xác nhận" okColor="#ec4899"/>
+        loading={loading} okLabel="Xác nhận" okColor="#b45309"/>
     </FloatModal>
   )
 }

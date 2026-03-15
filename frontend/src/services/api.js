@@ -29,7 +29,8 @@ export const treeApi = (treeId) => ({
   updateMember:  (id, data)     => api.put(`/trees/${treeId}/members/${id}`, data),
   deleteMember:  (id)           => api.delete(`/trees/${treeId}/members/${id}`),
   recordDeath:   (id, data)     => api.post(`/trees/${treeId}/members/${id}/death`, data),
-
+  // Bổ sung vào bên trong block trả về của treeApi(treeId)
+  reports:      (query = '')    => api.get(`/trees/${treeId}/reports${query}`),
   // Marriages
   marriages:        ()          => api.get(`/trees/${treeId}/marriages`),
   memberMarriages:  (memberId)  => api.get(`/trees/${treeId}/marriages?memberId=${memberId}`),

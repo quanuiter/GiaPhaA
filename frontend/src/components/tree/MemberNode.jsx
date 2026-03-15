@@ -8,10 +8,10 @@ export default function MemberNode({ data }) {
   const isMale = data.gender === 'male'
   const dead   = data.isDeceased
 
-  const cardBg = dead ? '#d1d5db' : isMale ? '#93c5fd' : '#f9a8d4'
-  const border = dead ? '#9ca3af' : isMale ? '#3b82f6' : '#ec4899'
-  const gearBg = dead ? '#6b7280' : isMale ? '#2563eb' : '#db2777'
-  const badgeBg= dead ? '#4b5563' : isMale ? '#1e40af' : '#9d174d'
+  const cardBg = dead ? '#dcc9b6' : isMale ? '#fed7aa' : '#fde68a'
+  const border = dead ? '#b89968' : isMale ? '#a16207' : '#d97706'
+  const gearBg = dead ? '#8b6d47' : isMale ? '#92400e' : '#b45309'
+  const badgeBg= dead ? '#6b5744' : isMale ? '#78350f' : '#a16207'
 
   const birthStr = data.birthDate
     ? new Date(data.birthDate).toLocaleDateString('vi-VN')
@@ -93,8 +93,8 @@ export default function MemberNode({ data }) {
       {/* ── Avatar ─────────────────────────────────────────── */}
       <div style={{
         width: 68, height: 68, borderRadius: '50%',
-        background: dead ? '#e5e7eb' : 'rgba(255,255,255,0.55)',
-        border: '3px solid rgba(255,255,255,.8)',
+        background: dead ? '#e5dcc8' : 'rgba(255,255,255,0.6)',
+        border: '3px solid rgba(255,255,255,.85)',
         marginTop: 28, overflow: 'hidden',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         boxShadow: '0 2px 6px rgba(0,0,0,.12)', flexShrink: 0,
@@ -105,9 +105,9 @@ export default function MemberNode({ data }) {
         ) : (
           <svg viewBox="0 0 80 80" width="62" height="62">
             <circle cx="40" cy="28" r="18"
-              fill={dead ? '#9ca3af' : isMale ? '#60a5fa' : '#f472b6'}/>
+              fill={dead ? '#a89968' : isMale ? '#b45309' : '#d97706'}/>
             <ellipse cx="40" cy="76" rx="30" ry="22"
-              fill={dead ? '#9ca3af' : isMale ? '#60a5fa' : '#f472b6'}/>
+              fill={dead ? '#a89968' : isMale ? '#b45309' : '#d97706'}/>
           </svg>
         )}
       </div>
@@ -115,7 +115,7 @@ export default function MemberNode({ data }) {
       {/* ── Tên ────────────────────────────────────────────── */}
       <div style={{
         marginTop: 7, fontSize: 11.5, fontWeight: 700,
-        color: dead ? '#374151' : '#1f2937',
+        color: dead ? '#78350f' : '#5a3a1f',
         textAlign: 'center', padding: '0 8px',
         lineHeight: 1.3, maxWidth: '100%',
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -127,7 +127,7 @@ export default function MemberNode({ data }) {
       {/* ── Nickname ───────────────────────────────────────── */}
       {data.nickname && (
         <div style={{
-          fontSize: 9.5, color: dead ? '#9ca3af' : '#6b7280',
+          fontSize: 9.5, color: dead ? '#8b5a2b' : '#8b5a2b',
           fontStyle: 'italic', marginTop: 1,
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           maxWidth: '90%', textAlign: 'center',
@@ -138,7 +138,7 @@ export default function MemberNode({ data }) {
 
       {/* ── Ngày ───────────────────────────────────────────── */}
       <div style={{
-        fontSize: 9.5, color: dead ? '#6b7280' : '#4b5563',
+        fontSize: 9.5, color: dead ? '#8b5a2b' : '#a16207',
         marginTop: data.nickname ? 2 : 4, textAlign: 'center',
         lineHeight: 1.4, padding: '0 4px',
       }}>

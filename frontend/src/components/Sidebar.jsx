@@ -6,6 +6,7 @@ const navItems = [
   { to: '/members',   label: 'Thành viên' },
   { to: '/tree',      label: 'Phả đồ' },
   { to: '/events',    label: 'Sự kiện' },
+  { to: '/reports',   label: 'Báo cáo' },
 ]
 
 const roleLabel = { admin: 'Quản trị viên', editor: 'Biên tập viên', viewer: 'Khách' }

@@ -193,17 +193,17 @@ export default function MemberDetailPage() {
   ]
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto space-y-6">
       {/* ── Header ── */}
-      <div className="flex items-start justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-4">
+      <div className="flex items-start justify-between gap-6">
+        <div className="flex items-start gap-6">
           <button onClick={() => navigate(-1)}
-            className="p-2 text-amber-900 hover:bg-amber-200 transition-colors rounded-sm" style={{ fontFamily: 'Georgia, serif' }}>
-            ←
+            className="p-2 text-amber-900 hover:bg-amber-200 transition-colors rounded-lg mt-1" style={{ fontFamily: 'Georgia, serif' }}>
+            ← Quay lại
           </button>
-          <div className="flex items-center gap-4">
-            <div className={`w-14 h-14 rounded-full flex items-center justify-center text-lg font-light
-              overflow-hidden flex-shrink-0
+          <div className="flex items-start gap-5">
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center text-2xl font-light
+              overflow-hidden flex-shrink-0 border-4 border-amber-900 border-opacity-20
               ${m.gender === 'male' ? 'bg-amber-300 text-amber-900' : 'bg-amber-200 text-amber-800'}`}>
               {m.avatarUrl
                 ? <img src={`http://localhost:3001${m.avatarUrl}`} className="w-full h-full object-cover" alt="" />
@@ -211,19 +211,19 @@ export default function MemberDetailPage() {
               }
             </div>
             <div>
-              <h2 className="text-2xl font-light text-amber-950" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.05em' }}>{m.fullName}</h2>
-              <div className="flex items-center gap-2 mt-2 flex-wrap">
-                <span className={`text-xs px-2 py-1 font-light
-                  ${m.gender === 'male' ? 'bg-amber-300 text-amber-900' : 'bg-amber-200 text-amber-800'}`}>
+              <h2 className="text-3xl font-light text-amber-950" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.08em' }}>{m.fullName}</h2>
+              {m.nickname && <p className="text-amber-700 font-light italic mt-1">"{m.nickname}"</p>}
+              <div className="flex items-center gap-2 mt-3 flex-wrap">
+                <span className={`text-xs px-3 py-1 font-light rounded-full ${m.gender === 'male' ? 'bg-amber-300 text-amber-900' : 'bg-amber-200 text-amber-800'}`}>
                   {m.gender === 'male' ? 'Nam' : 'Nữ'}
                 </span>
-                <span className="text-xs bg-amber-300 text-amber-900 px-2 py-1 font-light">
+                <span className="text-xs bg-amber-300 text-amber-900 px-3 py-1 rounded-full font-light">
                   Đời {m.generation}
                 </span>
-                <span className="text-xs text-amber-700 font-light">#{m.id}</span>
+                <span className="text-xs text-amber-700 font-light bg-amber-100 px-3 py-1 rounded-full">ID: {m.id}</span>
                 {m.isDeceased
-                  ? <span className="text-xs bg-amber-200 text-amber-900 px-2 py-1 font-light">✞ Đã mất</span>
-                  : <span className="text-xs bg-amber-300 text-amber-900 px-2 py-1 font-light">• Còn sống</span>
+                  ? <span className="text-xs bg-amber-200 text-amber-900 px-3 py-1 rounded-full font-light">Đã mất</span>
+                  : <span className="text-xs bg-amber-300 text-amber-900 px-3 py-1 rounded-full font-light">Còn sống</span>
                 }
               </div>
             </div>
@@ -232,14 +232,14 @@ export default function MemberDetailPage() {
         {canEdit && (
           <div className="flex gap-2">
             <Link to={`/members/${id}/edit`}
-              className="px-4 py-2 border-2 border-amber-900 border-opacity-30 text-amber-900
-                hover:bg-amber-200 text-sm transition-colors font-light rounded-sm" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.05em' }}>
-              Sửa
+              className="px-4 py-2.5 border border-amber-900 border-opacity-30 text-amber-900 bg-white
+                hover:bg-amber-100 text-sm transition-colors font-light rounded-lg" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.05em' }}>
+              ✎ Sửa
             </Link>
             {!m.isDeceased && (
               <button onClick={() => setShowDeathForm(true)}
-                className="px-4 py-2 bg-amber-900 text-amber-50
-                  hover:bg-amber-950 text-sm transition-colors font-light rounded-sm" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.05em' }}>
+                className="px-4 py-2.5 bg-amber-900 text-amber-50
+                  hover:bg-amber-950 text-sm transition-colors font-light rounded-lg" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.05em' }}>
                 Ghi Nhận Mất
               </button>
             )}
@@ -248,10 +248,10 @@ export default function MemberDetailPage() {
       </div>
 
       {/* ── Tabs ── */}
-      <div className="flex gap-2 bg-amber-200 bg-opacity-30 rounded-sm p-2 border-2 border-amber-900 border-opacity-20">
+      <div className="flex gap-2 bg-gradient-to-r from-amber-50 to-white rounded-lg p-2 border border-amber-900 border-opacity-20 overflow-x-auto">
         {TABS.map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 py-2 px-3 text-sm font-light transition-all rounded-sm ${activeTab === tab.key ? 'bg-amber-900 text-amber-50 shadow-md' : 'text-amber-900 hover:bg-amber-200 hover:bg-opacity-50'}`}
+            className={`py-2 px-4 text-sm font-light transition-all rounded-lg whitespace-nowrap ${activeTab === tab.key ? 'bg-amber-900 text-amber-50 shadow-md' : 'text-amber-900 hover:bg-amber-200 hover:bg-opacity-40'}`}
             style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.05em' }}>
             {tab.label}
           </button>
@@ -260,45 +260,75 @@ export default function MemberDetailPage() {
 
       {/* ── Tab: Thông tin ── */}
       {activeTab === 'info' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="relative bg-gradient-to-b from-amber-100 to-amber-50 rounded-sm border-2 border-amber-900 border-opacity-20 shadow-lg p-6" style={{ boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)' }}>
-            <div className="absolute top-2 left-2 w-4 h-4 border-t border-l border-amber-800 opacity-30"></div>
-            <h3 className="font-light text-amber-950 pb-3 border-b-2 border-amber-900 border-opacity-20 mb-4" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.08em' }}>Thông Tin Cá Nhân</h3>
-            <div className="space-y-3">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Personal Info */}
+          <div className="lg:col-span-2 bg-gradient-to-br from-amber-50 to-white rounded-xl border border-amber-900 border-opacity-20 shadow-sm p-6">
+            <h3 className="font-light text-amber-950 pb-3 border-b border-amber-900 border-opacity-20 mb-4" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.08em', fontSize: '1.1rem' }}>Thông Tin Cá Nhân</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
-                ['Tên gọi khác', m.nickname],
                 ['Ngày sinh', m.birthDate ? new Date(m.birthDate).toLocaleDateString('vi-VN') : null],
                 ['Nơi sinh', m.birthPlace],
                 ['Nghề nghiệp', m.occupation],
                 ['Quê quán', m.hometown],
-                ['Cha', m.father?.fullName],
-                ['Mẹ', m.mother?.fullName],
+                ['Tên gọi khác', m.nickname],
               ].filter(([, v]) => v).map(([label, value]) => (
-                <div key={label} className="flex justify-between text-sm">
-                  <span className="text-amber-800 font-light" style={{ fontFamily: 'Georgia, serif' }}>{label}</span>
-                  <span className="font-light text-amber-950 text-right" style={{ fontFamily: 'Georgia, serif' }}>{value}</span>
+                <div key={label} className="bg-amber-50 rounded-lg p-3 border border-amber-900 border-opacity-10">
+                  <p className="text-xs text-amber-700 font-light mb-1" style={{ fontFamily: 'Georgia, serif' }}>{label}</p>
+                  <p className="font-light text-amber-950" style={{ fontFamily: 'Georgia, serif' }}>{value}</p>
                 </div>
               ))}
             </div>
           </div>
 
+          {/* Family Info */}
+          <div className="bg-gradient-to-br from-amber-50 to-white rounded-xl border border-amber-900 border-opacity-20 shadow-sm p-6">
+            <h3 className="font-light text-amber-950 pb-3 border-b border-amber-900 border-opacity-20 mb-4" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.08em', fontSize: '1.1rem' }}>Quan Hệ Gia Đình</h3>
+            <div className="space-y-3">
+              {m.father && (
+                <Link to={`/members/${m.father.id}`} className="block bg-amber-50 hover:bg-amber-100 rounded-lg p-3 border border-amber-900 border-opacity-10 transition">
+                  <p className="text-xs text-amber-700 font-light mb-1">Cha</p>
+                  <p className="font-light text-amber-900 hover:text-amber-950" style={{ fontFamily: 'Georgia, serif' }}>{m.father.fullName}</p>
+                </Link>
+              )}
+              {m.mother && (
+                <Link to={`/members/${m.mother.id}`} className="block bg-amber-50 hover:bg-amber-100 rounded-lg p-3 border border-amber-900 border-opacity-10 transition">
+                  <p className="text-xs text-amber-700 font-light mb-1">Mẹ</p>
+                  <p className="font-light text-amber-900 hover:text-amber-950" style={{ fontFamily: 'Georgia, serif' }}>{m.mother.fullName}</p>
+                </Link>
+              )}
+              <div className="bg-amber-100 rounded-lg p-3 border border-amber-900 border-opacity-20 mt-4 pt-4 border-t">
+                <p className="text-xs text-amber-700 font-light mb-2">Con cái</p>
+                <p className="font-light text-amber-900" style={{ fontFamily: 'Georgia, serif' }}>
+                  {(m.childrenAsFather?.length || 0) + (m.childrenAsMother?.length || 0)} con
+                </p>
+              </div>
+            </div>
+          </div>
+
+
+
+          {/* Death Info */}
           {m.isDeceased && m.death && (
-            <div className="relative bg-gradient-to-b from-amber-100 to-amber-50 rounded-sm border-2 border-amber-900 border-opacity-20 shadow-lg p-6" style={{ boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)' }}>
-              <div className="absolute top-2 left-2 w-4 h-4 border-t border-l border-amber-800 opacity-30"></div>
-              <h3 className="font-light text-amber-950 pb-3 border-b-2 border-amber-900 border-opacity-20 mb-4" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.08em' }}>Qua Đời</h3>
+            <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-xl border border-amber-900 border-opacity-20 shadow-sm p-6">
+              <h3 className="font-light text-amber-950 pb-3 border-b border-amber-900 border-opacity-20 mb-4" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.08em', fontSize: '1.1rem' }}>Thông Tin Qua Đời</h3>
               <div className="space-y-3">
                 {[
                   ['Ngày mất', new Date(m.death.deathDate).toLocaleDateString('vi-VN')],
                   ['Nguyên nhân', causeLabel[m.death.cause] || m.death.cause],
                   ['Nơi mai táng', burialLabel[m.death.burialPlace] || m.death.burialPlace],
                   ['Tuổi thọ', m.death.longevity ? `${m.death.longevity} tuổi` : null],
-                  ['Ghi chú', m.death.note],
                 ].filter(([, v]) => v).map(([label, value]) => (
-                  <div key={label} className="flex justify-between text-sm">
-                    <span className="text-amber-800 font-light" style={{ fontFamily: 'Georgia, serif' }}>{label}</span>
-                    <span className="font-light text-amber-950 text-right" style={{ fontFamily: 'Georgia, serif' }}>{value}</span>
+                  <div key={label} className="bg-white rounded-lg p-3 border border-amber-900 border-opacity-10">
+                    <p className="text-xs text-amber-700 font-light mb-1">{label}</p>
+                    <p className="font-light text-amber-950">{value}</p>
                   </div>
                 ))}
+                {m.death.note && (
+                  <div className="bg-white rounded-lg p-3 border border-amber-900 border-opacity-10 mt-4 pt-4 border-t">
+                    <p className="text-xs text-amber-700 font-light mb-1">Ghi chú</p>
+                    <p className="font-light text-amber-950 text-sm">{m.death.note}</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -307,31 +337,31 @@ export default function MemberDetailPage() {
 
       {/* ── Tab: Hôn nhân ── */}
       {activeTab === 'marriage' && (
-        <div className="space-y-6">
+        <div className="space-y-5">
           {canEdit && !m.isDeceased && (
             <button onClick={() => setShowMarriageForm(true)}
               className="px-4 py-2.5 bg-amber-900 text-amber-50
-                rounded-sm text-sm hover:bg-amber-950 transition-colors font-light" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.05em' }}>
+                rounded-lg text-sm hover:bg-amber-950 transition-colors font-light" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.05em' }}>
               + Thêm Hôn Nhân
             </button>
           )}
 
           {marriages.length === 0 && (
-            <div className="relative bg-gradient-to-b from-amber-100 to-amber-50 rounded-sm border-2 border-amber-900 border-opacity-20 p-10 text-center shadow-lg" style={{ boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)' }}>
-              <p className="text-amber-700 font-light" style={{ fontFamily: 'Georgia, serif' }}>Chưa có hôn nhân nào</p>
+            <div className="bg-gradient-to-br from-amber-50 to-white rounded-lg border border-amber-900 border-opacity-20 p-12 text-center">
+              <p className="text-amber-700 font-light text-lg" style={{ fontFamily: 'Georgia, serif' }}>Chưa có hôn nhân nào</p>
             </div>
           )}
 
           {marriages.map(mar => (
-            <div key={mar.id} className="relative bg-gradient-to-b from-amber-100 to-amber-50 rounded-sm border-2 border-amber-900 border-opacity-20 shadow-lg p-6" style={{ boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)' }}>
-              <div className="absolute top-2 left-2 w-4 h-4 border-t border-l border-amber-800 opacity-30"></div>
+            <div key={mar.id} className="bg-gradient-to-br from-amber-50 to-white rounded-lg border border-amber-900 border-opacity-20 shadow-sm p-6 hover:shadow-md transition-shadow">
+              {/* Marriage Card Header */}
               {editingMarriage?.id === mar.id ? (
                 <div className="space-y-4">
-                  <p className="font-light text-amber-950" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.08em' }}>Cập Nhật Hôn Nhân Với {mar.spouse?.fullName}</p>
-                  <div className="grid grid-cols-2 gap-4">
+                  <p className="font-light text-amber-950 text-lg" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.08em' }}>Cập Nhật Hôn Nhân</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs font-light text-amber-900 mb-2 block" style={{ fontFamily: 'Georgia, serif' }}>Trạng Thái</label>
-                      <select className="w-full border-2 border-amber-900 border-opacity-30 bg-white bg-opacity-70 px-3 py-2 text-sm rounded-sm focus:outline-none focus:border-amber-800 text-amber-950" style={{ fontFamily: 'Georgia, serif' }}
+                      <select className="w-full border border-amber-900 border-opacity-20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-900 focus:ring-opacity-20 text-amber-950 bg-white" style={{ fontFamily: 'Georgia, serif' }}
                         value={editingMarriage.status}
                         onChange={e => setEditingMarriage(p => ({ ...p, status: e.target.value }))}>
                         {MARRIAGE_STATUS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
@@ -340,7 +370,7 @@ export default function MemberDetailPage() {
                     {editingMarriage.status === 'divorced' && (
                       <div>
                         <label className="text-xs font-light text-amber-900 mb-2 block" style={{ fontFamily: 'Georgia, serif' }}>Ngày Ly Hôn</label>
-                        <input type="date" className="w-full border-2 border-amber-900 border-opacity-30 bg-white bg-opacity-70 px-3 py-2 text-sm rounded-sm focus:outline-none focus:border-amber-800 text-amber-950" style={{ fontFamily: 'Georgia, serif' }}
+                        <input type="date" className="w-full border border-amber-900 border-opacity-20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-900 focus:ring-opacity-20 text-amber-950" style={{ fontFamily: 'Georgia, serif' }}
                           value={editingMarriage.divorceDate || ''}
                           onChange={e => setEditingMarriage(p => ({ ...p, divorceDate: e.target.value }))} />
                       </div>
@@ -348,7 +378,7 @@ export default function MemberDetailPage() {
                   </div>
                   <div>
                     <label className="text-xs font-light text-amber-900 mb-2 block" style={{ fontFamily: 'Georgia, serif' }}>Ghi Chú</label>
-                    <input className="w-full border-2 border-amber-900 border-opacity-30 bg-white bg-opacity-70 px-3 py-2 text-sm rounded-sm focus:outline-none focus:border-amber-800 text-amber-950" style={{ fontFamily: 'Georgia, serif' }}
+                    <input className="w-full border border-amber-900 border-opacity-20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-900 focus:ring-opacity-20 text-amber-950" style={{ fontFamily: 'Georgia, serif' }}
                       value={editingMarriage.note || ''}
                       onChange={e => setEditingMarriage(p => ({ ...p, note: e.target.value }))} />
                   </div>
@@ -356,47 +386,53 @@ export default function MemberDetailPage() {
                     <button onClick={() => updateMarriageMutation.mutate({
                       mid: mar.id,
                       data: { status: editingMarriage.status, divorceDate: editingMarriage.divorceDate, note: editingMarriage.note }
-                    })} className="flex-1 px-3 py-1.5 bg-amber-900 text-amber-50 rounded-sm text-sm hover:bg-amber-950 font-light" style={{ fontFamily: 'Georgia, serif' }}>
+                    })} className="flex-1 px-3 py-2 bg-amber-900 text-amber-50 rounded-lg text-sm hover:bg-amber-950 font-light" style={{ fontFamily: 'Georgia, serif' }}>
                       Lưu
                     </button>
                     <button onClick={() => setEditingMarriage(null)}
-                      className="flex-1 px-3 py-1.5 border-2 border-amber-900 border-opacity-30 text-amber-900 rounded-sm text-sm hover:bg-amber-200 font-light" style={{ fontFamily: 'Georgia, serif' }}>
+                      className="flex-1 px-3 py-2 border border-amber-900 border-opacity-30 text-amber-900 rounded-lg text-sm hover:bg-amber-100 font-light" style={{ fontFamily: 'Georgia, serif' }}>
                       Hủy
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center font-light text-sm
+                <div className="flex items-start gap-4">
+                  <div className={`w-14 h-14 rounded-full flex items-center justify-center font-light text-lg flex-shrink-0 border-2 border-amber-900 border-opacity-20
                     ${mar.spouse?.gender === 'male' ? 'bg-amber-300 text-amber-900' : 'bg-amber-200 text-amber-800'}`}>
-                    {mar.spouse?.fullName?.split(' ').pop()[0]}
+                    {mar.spouse?.avatarUrl ? (
+                      <img src={`http://localhost:3001${mar.spouse.avatarUrl}`} className="w-full h-full object-cover rounded-full" alt="" />
+                    ) : mar.spouse?.fullName?.split(' ').pop()[0]}
                   </div>
                   <div className="flex-1 min-w-0">
                     <Link to={`/members/${mar.spouse?.id}`}
-                      className="font-light text-amber-950 hover:text-amber-900 transition-colors" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.05em' }}>
+                      className="font-light text-amber-950 hover:text-amber-900 transition-colors text-lg" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.05em' }}>
                       {mar.spouse?.fullName}
                     </Link>
-                    <div className="flex items-center gap-2 mt-1 text-sm text-amber-800 flex-wrap font-light">
-                      <span>{MARRIAGE_STATUS.find(([v]) => v === mar.status)?.[1]}</span>
+                    <div className="flex items-center gap-2 mt-3 flex-wrap">
+                      <span className={`text-xs px-3 py-1 rounded-full font-light ${
+                        mar.status === 'living' ? 'bg-amber-300 text-amber-900' : 'bg-amber-200 text-amber-800'
+                      }`}>
+                        {MARRIAGE_STATUS.find(([v]) => v === mar.status)?.[1]}
+                      </span>
                       {mar.marriageDate && (
-                        <span>• Kết hôn: {new Date(mar.marriageDate).toLocaleDateString('vi-VN')}</span>
+                        <span className="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-full">{new Date(mar.marriageDate).getFullYear()}</span>
                       )}
                       {mar.divorceDate && (
-                        <span>• Ly hôn: {new Date(mar.divorceDate).toLocaleDateString('vi-VN')}</span>
+                        <span className="text-xs text-amber-700 bg-red-50 px-2 py-1 rounded-full">Ly hôn {new Date(mar.divorceDate).getFullYear()}</span>
                       )}
                     </div>
-                    {mar.note && <p className="text-xs text-amber-700 mt-1 italic font-light">{mar.note}</p>}
+                    {mar.note && <p className="text-xs text-amber-700 mt-3 italic font-light bg-amber-50 p-3 rounded-lg">{mar.note}</p>}
                   </div>
                   {canEdit && (
                     <div className="flex gap-1">
                       <button onClick={() => setEditingMarriage({ id: mar.id, status: mar.status, divorceDate: mar.divorceDate?.slice(0, 10) || '', note: mar.note || '' })}
-                        className="p-1.5 text-amber-900 hover:bg-amber-200 rounded-sm transition-colors" title="Sửa">
-                        S
+                        className="px-3 py-1.5 text-amber-900 hover:bg-amber-100 transition-colors rounded-lg text-sm border border-amber-900 border-opacity-20 font-light" title="Sửa">
+                        Sửa
                       </button>
                       {isAdmin && (
                         <button onClick={() => confirm(`Xóa hôn nhân với ${mar.spouse?.fullName}?`) && deleteMarriageMutation.mutate(mar.id)}
-                          className="p-1.5 text-amber-900 hover:bg-amber-200 rounded-sm transition-colors" title="Xóa">
-                          X
+                          className="px-3 py-1.5 text-amber-900 hover:bg-red-100 transition-colors rounded-lg text-sm border border-amber-900 border-opacity-20 font-light" title="Xóa">
+                          Xóa
                         </button>
                       )}
                     </div>
@@ -410,30 +446,31 @@ export default function MemberDetailPage() {
 
       {/* ── Tab: Thành tích ── */}
       {activeTab === 'achieve' && (
-        <div className="space-y-6">
+        <div className="space-y-5">
           {canEdit && (
             <button onClick={() => setShowAchieveForm(true)}
               className="px-4 py-2.5 bg-amber-900 text-amber-50
-                rounded-sm text-sm hover:bg-amber-950 transition-colors font-light" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.05em' }}>
+                rounded-lg text-sm hover:bg-amber-950 transition-colors font-light" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.05em' }}>
               + Thêm Thành Tích
             </button>
           )}
 
           {achievements.length === 0 && (
-            <div className="relative bg-gradient-to-b from-amber-100 to-amber-50 rounded-sm border-2 border-amber-900 border-opacity-20 p-10 text-center shadow-lg" style={{ boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)' }}>
-              <p className="text-amber-700 font-light" style={{ fontFamily: 'Georgia, serif' }}>Chưa có thành tích nào</p>
+            <div className="bg-gradient-to-br from-amber-50 to-white rounded-lg border border-amber-900 border-opacity-20 p-12 text-center">
+              <p className="text-amber-700 font-light text-lg" style={{ fontFamily: 'Georgia, serif' }}>Chưa có thành tích nào</p>
             </div>
           )}
 
           {achievements.map(a => (
-            <div key={a.id} className="relative bg-gradient-to-b from-amber-100 to-amber-50 rounded-sm border-2 border-amber-900 border-opacity-20 shadow-lg p-6" style={{ boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)' }}>
-              <div className="absolute top-2 left-2 w-4 h-4 border-t border-l border-amber-800 opacity-30"></div>
+            <div key={a.id} className="bg-gradient-to-br from-amber-50 to-white rounded-lg border border-amber-900 border-opacity-20 shadow-sm p-6 hover:shadow-md transition-shadow">
+              {/* Achievement Header */}
               {editingAchieve?.id === a.id ? (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
+                  <p className="font-light text-amber-950 text-lg" style={{ fontFamily: 'Georgia, serif', letterSpacing: '0.08em' }}>Cập Nhật Thành Tích</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <label className="text-xs font-light text-amber-900 mb-2 block" style={{ fontFamily: 'Georgia, serif' }}>Loại</label>
-                      <select className="w-full border-2 border-amber-900 border-opacity-30 bg-white bg-opacity-70 px-3 py-2 text-sm rounded-sm focus:outline-none focus:border-amber-800 text-amber-950" style={{ fontFamily: 'Georgia, serif' }}
+                      <select className="w-full border border-amber-900 border-opacity-20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-900 focus:ring-opacity-20 text-amber-950 bg-white" style={{ fontFamily: 'Georgia, serif' }}
                         value={editingAchieve.type}
                         onChange={e => setEditingAchieve(p => ({ ...p, type: e.target.value }))}>
                         {ACHIEVE_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
@@ -441,7 +478,7 @@ export default function MemberDetailPage() {
                     </div>
                     <div>
                       <label className="text-xs font-light text-amber-900 mb-2 block" style={{ fontFamily: 'Georgia, serif' }}>Cấp Độ</label>
-                      <select className="w-full border-2 border-amber-900 border-opacity-30 bg-white bg-opacity-70 px-3 py-2 text-sm rounded-sm focus:outline-none focus:border-amber-800 text-amber-950" style={{ fontFamily: 'Georgia, serif' }}
+                      <select className="w-full border border-amber-900 border-opacity-20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-900 focus:ring-opacity-20 text-amber-950 bg-white" style={{ fontFamily: 'Georgia, serif' }}
                         value={editingAchieve.level}
                         onChange={e => setEditingAchieve(p => ({ ...p, level: e.target.value }))}>
                         {ACHIEVE_LEVELS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
@@ -449,7 +486,7 @@ export default function MemberDetailPage() {
                     </div>
                     <div>
                       <label className="text-xs font-light text-amber-900 mb-2 block" style={{ fontFamily: 'Georgia, serif' }}>Năm</label>
-                      <input type="number" className="w-full border-2 border-amber-900 border-opacity-30 bg-white bg-opacity-70 px-3 py-2 text-sm rounded-sm focus:outline-none focus:border-amber-800 text-amber-950" style={{ fontFamily: 'Georgia, serif' }}
+                      <input type="number" className="w-full border border-amber-900 border-opacity-20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-900 focus:ring-opacity-20 text-amber-950" style={{ fontFamily: 'Georgia, serif' }}
                         value={editingAchieve.year}
                         onChange={e => setEditingAchieve(p => ({ ...p, year: e.target.value }))} />
                     </div>

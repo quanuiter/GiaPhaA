@@ -22,6 +22,14 @@ router.get('/', auth(), checkAccess, async (req, res) => {
       select: {
         id: true, fullName: true, gender: true, generation: true,
         birthDate: true, isDeceased: true, fatherId: true, motherId: true, avatarUrl: true,
+        birthPlace: true,
+        occupation: true,
+        hometown: true,
+        address: true,  // Nhớ thêm cả 2 trường mới vừa khai báo ở schema
+        bio: true,
+        birthDateLunar: true,
+        phone: true,
+        email: true,
         death: { select: { deathDate: true, longevity: true } }
       },
       orderBy: [{ generation: 'asc' }, { id: 'asc' }]

@@ -14,9 +14,9 @@ const ROOT_GAP          = 80   // khoảng cách giữa các cây gốc khác nh
 
 // ── Màu đường nối hôn nhân ──────────────────────────────────
 export const MARRIAGE_COLORS = {
-  living:   { stroke: '#d97706', strokeWidth: 2.5, dasharray: null },
-  divorced: { stroke: '#dc2626', strokeWidth: 2,   dasharray: '8 5' },
-  widowed:  { stroke: '#9ca3af', strokeWidth: 2,   dasharray: '6 4' },
+  living:   { stroke: '#b45309', strokeWidth: 2.5, dasharray: null },
+  divorced: { stroke: '#d97706', strokeWidth: 2,   dasharray: '8 5' },
+  widowed:  { stroke: '#a89968', strokeWidth: 2,   dasharray: '6 4' },
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -197,6 +197,14 @@ export function buildGraph(members, marriages, edgeType = 'smoothstep') {
         avatarUrl:  m.avatarUrl,
         birthDate:  m.birthDate,
         deathDate:  m.death?.deathDate,
+        hometown: m.hometown,
+        occupation: m.occupation,
+        birthPlace: m.birthPlace,
+        address: m.address,
+        bio: m.bio,
+        birthDateLunar: m.birthDateLunar,
+        phone: m.phone,
+        email: m.email
       },
     })
   })
@@ -241,8 +249,8 @@ export function buildGraph(members, marriages, edgeType = 'smoothstep') {
     
     // Nếu là con nuôi (isAdopted = true), vẽ nét đứt
     const edgeStyle = m.isAdopted 
-        ? { stroke: '#4b5563', strokeWidth: 2, strokeDasharray: '5 5' } 
-        : { stroke: '#4b5563', strokeWidth: 2 };
+        ? { stroke: '#8b6d47', strokeWidth: 2, strokeDasharray: '5 5' } 
+        : { stroke: '#8b6d47', strokeWidth: 2 };
 
     edges.push({
       id:        `ec-${m.id}`,
@@ -250,8 +258,29 @@ export function buildGraph(members, marriages, edgeType = 'smoothstep') {
       target:    `m-${m.id}`,
       type:      edgeType,
       style:     edgeStyle,
-      markerEnd: { type: MarkerType.ArrowClosed, width: 9, height: 9, color: '#4b5563' },
+      markerEnd: { type: MarkerType.ArrowClosed, width: 9, height: 9, color: '#8b6d47' },
     })
+  })
+
+  // ── Mother → child dashed edges (để phân biệt khi một cha có nhiều vợ) ──────────────────────────────────
+  members.forEach(m => {
+    if (!m.motherId) return
+    const motherPos = positions[`m-${m.motherId}`]
+    const childPos = positions[`m-${m.id}`]
+    if (!motherPos || !childPos) return
+    
+    // Nếu mẹ không phải là anchor (có nghĩa là có một cha và nhiều mẹ), vẽ nét đứt từ mẹ
+    const anchor = anchorOf(m, memberById)
+    if (anchor !== m.motherId) {
+      edges.push({
+        id:        `em-${m.id}`,
+        source:    `m-${m.motherId}`,
+        target:    `m-${m.id}`,
+        type:      'straight',  // Luôn dùng đường thẳng cho mẹ → con
+        style:     { stroke: '#c8b5a0', strokeWidth: 1.8, strokeDasharray: '5 4' },
+        markerEnd: { type: MarkerType.ArrowClosed, width: 8, height: 8, color: '#c8b5a0' },
+      })
+    }
   })
 
   return { nodes, edges }

@@ -16,6 +16,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { treeApi } from '../../../services/api'
+import { Solar } from 'lunar-javascript'
 import { useAuthStore } from '../../../store/authStore'
 import {
   FloatModal, Section, Grid2, Field, Input, Select, Textarea, ModalButtons,
@@ -29,11 +30,11 @@ export default function EditMemberModal({ member, onClose }) {
   const qc  = useQueryClient()
   const fileRef = useRef()
 
-  const [form, setForm] = useState({
+const [form, setForm] = useState({
     fullName:   '', nickname:   '',
-    gender:     'male', birthDate: '',
+    gender:     'male', birthDate: '', birthDateLunar: '',
     birthPlace: '', occupation: '',
-    hometown:   '', address: '',
+    hometown:   '', address: '', phone: '', email: '',
     bio:        '', generation: 1,
   })
   const [avatarFile, setAvatarFile] = useState(null)
@@ -52,6 +53,9 @@ export default function EditMemberModal({ member, onClose }) {
       address:    member.address    ?? '',
       bio:        member.bio        ?? '',
       generation: member.generation ?? 1,
+      birthDateLunar: member.birthDateLunar ?? '',
+      phone:          member.phone          ?? '',
+      email:          member.email          ?? '',
     })
     setAvatarPreview(member.avatarUrl ? `http://localhost:3001${member.avatarUrl}` : null)
   }, [member])
@@ -93,34 +97,52 @@ export default function EditMemberModal({ member, onClose }) {
       return toast.error('Ngày sinh không được vượt ngày hiện tại')
     mutation.mutate()
   }
-
+  const handleBirthDateChange = (e) => {
+    const val = e.target.value;
+    setForm(f => ({ ...f, birthDate: val }));
+    
+    if (val) {
+      try {
+        const [year, month, day] = val.split('-');
+        const solar = Solar.fromYmd(parseInt(year, 10), parseInt(month, 10), parseInt(day, 10));
+        const lunar = solar.getLunar();
+        // Định dạng ra chuỗi DD/MM/YYYY
+        const lDay = lunar.getDay().toString().padStart(2, '0');
+        const lMonth = lunar.getMonth().toString().padStart(2, '0');
+        setForm(f => ({ ...f, birthDateLunar: `${lDay}/${lMonth}/${lunar.getYear()}` }));
+      } catch (err) {
+        // bỏ qua nếu lỗi parse
+      }
+    } else {
+      setForm(f => ({ ...f, birthDateLunar: '' }));
+    }
+  }
   return (
     <FloatModal
-      title="✏️ Chỉnh sửa hồ sơ thành viên"
-      subtitle={`Mã: #${member?.id}`}
-      onClose={onClose}
-      width={520}
+      title="Chỉnh sửa hồ sơ"
+      subtitle={`${member?.fullName}`}
+      onClose={onClose} width={540}
     >
       {/* ── Ảnh đại diện ───────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
         <div style={{
           width: 70, height: 70, borderRadius: '50%',
-          background: '#f3f4f6', border: '2px dashed #d1d5db',
+          background: '#fef3c7', border: '2px dashed #d4c9b8',
           overflow: 'hidden', flexShrink: 0, cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }} onClick={() => fileRef.current?.click()}>
           {avatarPreview
             ? <img src={avatarPreview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt=""/>
-            : <span style={{ fontSize: 28 }}>📷</span>
+            : <span style={{ fontSize: 14, color: '#8b5a2b' }}>Ảnh</span>
           }
         </div>
         <div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#111827', marginBottom: 4 }}>Ảnh đại diện</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#5a3a1f', marginBottom: 4 }}>Ảnh đại diện</div>
           <button onClick={() => fileRef.current?.click()} style={{
-            padding: '5px 12px', border: '1px solid #d1d5db', borderRadius: 6,
-            background: '#fff', cursor: 'pointer', fontSize: 12, color: '#374151',
+            padding: '5px 12px', border: '1px solid #d4c9b8', borderRadius: 6,
+            background: '#fef3c7', cursor: 'pointer', fontSize: 12, color: '#8b5a2b',
           }}>Chọn ảnh (JPG / PNG)</button>
-          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>Tối đa 5 MB</div>
+          <div style={{ fontSize: 11, color: '#a16207', marginTop: 3 }}>Tối đa 5 MB</div>
         </div>
         <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png"
           style={{ display: 'none' }} onChange={handleAvatarChange}/>
@@ -138,20 +160,27 @@ export default function EditMemberModal({ member, onClose }) {
           </Field>
           <Field label="Giới tính">
             <Select value={form.gender} onChange={set('gender')}>
-              <option value="male">♂ Nam</option>
-              <option value="female">♀ Nữ</option>
+              <option value="male">Nam</option>
+              <option value="female">Nữ</option>
             </Select>
           </Field>
           <Field label="Ngày tháng năm sinh">
-            <Input type="date" value={form.birthDate} onChange={set('birthDate')} max={TODAY}/>
+            {/* 👉 ĐỔI SỰ KIỆN onChange SANG HÀM TỰ TÍNH ÂM LỊCH */}
+            <Input type="date" value={form.birthDate} onChange={handleBirthDateChange} max={TODAY}/>
           </Field>
+
+          {/* 👉 THÊM Ô NGÀY ÂM LỊCH */}
+          <Field label="Ngày sinh (Âm lịch)">
+            <Input value={form.birthDateLunar} onChange={set('birthDateLunar')} placeholder="VD: 15/08/1990"/>
+          </Field>
+
           <Field label="Đời thứ">
             <Input type="number" value={form.generation} onChange={set('generation')} min={1} max={50}/>
           </Field>
         </Grid2>
       </Section>
 
-      <Section title="Thông tin cư trú">
+      <Section title="Thông tin cư trú & Liên hệ">
         <Grid2>
           <Field label="Quê quán">
             <Input value={form.hometown} onChange={set('hometown')} placeholder="Quê gốc..."/>
@@ -165,6 +194,14 @@ export default function EditMemberModal({ member, onClose }) {
           <Field label="Địa chỉ hiện tại">
             <Input value={form.address} onChange={set('address')} placeholder="Số nhà, đường, quận..."/>
           </Field>
+
+          {/* 👉 THÊM Ô SĐT VÀ EMAIL */}
+          <Field label="Số điện thoại">
+            <Input value={form.phone} onChange={set('phone')} placeholder="09xxxx..."/>
+          </Field>
+          <Field label="Email liên hệ">
+            <Input value={form.email} type="email" onChange={set('email')} placeholder="email@..."/>
+          </Field>
         </Grid2>
       </Section>
 
@@ -174,7 +211,7 @@ export default function EditMemberModal({ member, onClose }) {
       </Section>
 
       <ModalButtons onCancel={onClose} onOk={handleSave}
-        loading={mutation.isPending} okLabel="Cập nhật"/>
+        loading={mutation.isPending} okLabel="Cập nhật" okColor="#b45309"/>
     </FloatModal>
   )
 }
