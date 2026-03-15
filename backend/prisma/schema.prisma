@@ -67,14 +67,17 @@ model Member {
   gender           String     // "male" | "female"
   birthDate        DateTime?
   birthPlace       String?    @db.VarChar(200)
+  deathDate        DateTime?                   // (NEW) Ngày mất (alternative to Death model)
   occupation       String?    @db.VarChar(100)
   hometown         String?    @db.VarChar(200)
+  bioNote          String?    @db.Text        // (NEW) Tiểu sử / ghi chú dài
   generation       Int        @default(1)
   avatarUrl        String?    @db.VarChar(500)
   isDeceased       Boolean    @default(false)
   isAdopted        Boolean    @default(false)
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
+  deletedAt        DateTime?                   // (NEW) Soft delete - ngày xóa
 
   fatherId         Int?
   motherId         Int?
@@ -96,6 +99,7 @@ model Member {
   @@index([fatherId])
   @@index([motherId])
   @@index([generation])
+  @@index([deletedAt])  // (NEW) Index để filter bỏ soft-deleted records
 }
 
 model Marriage {
@@ -106,14 +110,20 @@ model Marriage {
   marriageDate DateTime?
   status       String    @default("living")    // "living" | "divorced" | "widowed"
   divorceDate  DateTime?
+  location     String?   @db.VarChar(200)      // (NEW) Nơi kết hôn
+  witnesses    String?   @db.Text              // (NEW) Danh sách nhân chứng (JSON)
   note         String?   @db.Text
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?                       // (NEW) Soft delete
 
   husband      Member    @relation("Husband", fields: [husbandId], references: [id])
   wife         Member    @relation("Wife", fields: [wifeId], references: [id])
 
   @@index([treeId])
+  @@index([husbandId])
+  @@index([wifeId])
+  @@index([deletedAt])  // (NEW) Index để filter bỏ soft-deleted records
 }
 
 model Death {
@@ -132,14 +142,20 @@ model Death {
 model Achievement {
   id          Int      @id @default(autoincrement())
   memberId    Int
-  type        String
-  level       String
+  type        String   // "education" | "career" | "honor" | "contribution" | "other"
+  level       String   // "national" | "regional" | "local" | "family"
   year        Int
   description String   @db.Text
   issuedBy    String?  @db.VarChar(200)
+  certificate String?  @db.VarChar(500)      // (NEW) URL chứng chỉ/bằng cấp
   createdAt   DateTime @default(now())
+  deletedAt   DateTime?                       // (NEW) Soft delete
 
-  member      Member   @relation(fields: [memberId], references: [id])
+  member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@index([year])
+  @@index([deletedAt])  // (NEW) Index để filter bỏ soft-deleted records
 }
 
 model FamilyEvent {
