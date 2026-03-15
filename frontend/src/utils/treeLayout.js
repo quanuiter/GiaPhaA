@@ -268,7 +268,7 @@ export function buildGraph(members, marriages, edgeType = 'smoothstep') {
         id:        `em-${m.id}`,
         source:    `m-${m.motherId}`,
         target:    `m-${m.id}`,
-        type:      edgeType,
+        type:      'straight',  // Luôn dùng đường thẳng cho mẹ → con
         style:     { stroke: '#c8b5a0', strokeWidth: 1.8, strokeDasharray: '5 4' },
         markerEnd: { type: MarkerType.ArrowClosed, width: 8, height: 8, color: '#c8b5a0' },
       })
