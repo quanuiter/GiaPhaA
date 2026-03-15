@@ -73,8 +73,6 @@ model Member {
   avatarUrl        String?    @db.VarChar(500)
   isDeceased       Boolean    @default(false)
   isAdopted        Boolean    @default(false)
-  bioNote          String?    @db.Text          // Ghi chú tiểu sử/tiểu sử chi tiết
-  familyRole       String?    @db.VarChar(50)   // "patriarch" | "matriarch" | "branch_head" | "elder" | null
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
 
@@ -85,15 +83,14 @@ model Member {
   childrenAsFather Member[]   @relation("FatherChildren")
   childrenAsMother Member[]   @relation("MotherChildren")
 
-  tree             FamilyTree        @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  tree             FamilyTree   @relation(fields: [treeId], references: [id], onDelete: Cascade)
   death            Death?
   achievements     Achievement[]
-  marriagesAsH     Marriage[]        @relation("Husband")
-  marriagesAsW     Marriage[]        @relation("Wife")
+  marriagesAsH     Marriage[]   @relation("Husband")
+  marriagesAsW     Marriage[]   @relation("Wife")
   events           FamilyEvent[]
   user             User?
   auditLogs        AuditLog[]
-  relationshipHistory RelationshipHistory[]
 
   @@index([treeId])
   @@index([fatherId])
@@ -115,27 +112,8 @@ model Marriage {
 
   husband      Member    @relation("Husband", fields: [husbandId], references: [id])
   wife         Member    @relation("Wife", fields: [wifeId], references: [id])
-  statusHistory RelationshipHistory[]
 
   @@index([treeId])
-}
-
-// Theo dõi lịch sử thay đổi trạng thái quan hệ hôn nhân
-model RelationshipHistory {
-  id          Int       @id @default(autoincrement())
-  marriageId  Int
-  memberId    Int                              // Ai ghi nhận thay đổi này
-  oldStatus   String    @db.VarChar(50)
-  newStatus   String    @db.VarChar(50)
-  changeDate  DateTime  @default(now())
-  note        String?   @db.Text
-  createdAt   DateTime  @default(now())
-
-  marriage    Marriage  @relation(fields: [marriageId], references: [id], onDelete: Cascade)
-  member      Member    @relation(fields: [memberId], references: [id])
-
-  @@index([marriageId])
-  @@index([memberId])
 }
 
 model Death {
