@@ -1,28 +1,29 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useAuthStore } from '../store/authStore'
 import api from '../services/api'
 import toast from 'react-hot-toast'
-import { cls } from '../components/ui'
 
-export default function LoginPage() {
-  const [form, setForm] = useState({ username: '', password: '' })
+export default function SignupPage() {
+  const [form, setForm] = useState({ username: '', password: '', confirmPassword: '' })
   const [loading, setLoading] = useState(false)
-  const { login } = useAuthStore()
   const navigate = useNavigate()
 
   const handleSubmit = async e => {
     e.preventDefault()
-    if (!form.username || !form.password)
+    if (!form.username || !form.password || !form.confirmPassword)
       return toast.error('Vui lòng nhập đầy đủ thông tin')
+    if (form.password.length < 6)
+      return toast.error('Mật khẩu phải ít nhất 6 ký tự')
+    if (form.password !== form.confirmPassword)
+      return toast.error('Mật khẩu xác nhận không khớp')
+    
     setLoading(true)
     try {
-      const { data } = await api.post('/auth/login', form)
-      login(data.user, data.token)
-      toast.success('Đăng nhập thành công!')
-      navigate('/dashboard')
+      await api.post('/auth/signup', { username: form.username, password: form.password })
+      toast.success('Đăng ký thành công! Vui lòng chờ quản trị viên xét duyệt.')
+      navigate('/login')
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Sai tên đăng nhập hoặc mật khẩu')
+      toast.error(err.response?.data?.message || 'Lỗi đăng ký. Tên đăng nhập có thể đã tồn tại.')
     } finally {
       setLoading(false)
     }
@@ -55,10 +56,10 @@ export default function LoginPage() {
               Gia Phả
             </div>
             <h1 className="text-3xl font-light text-amber-900 mb-1" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.15em'}}>
-              Quản Lý Gia Phả
+              Đăng Ký Tài Khoản
             </h1>
             <p className="text-sm text-amber-700 font-light" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.1em'}}>
-              Lịch Sử Gia Tộc
+              Quản Lý Gia Phả
             </p>
           </div>
 
@@ -81,6 +82,7 @@ export default function LoginPage() {
                 value={form.username}
                 onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
               />
+              <p className="text-xs text-amber-600 mt-1 font-light">Tối thiểu 3 ký tự, chỉ chữ, số, _ và -</p>
             </div>
 
             <div>
@@ -90,9 +92,22 @@ export default function LoginPage() {
               <input
                 className="w-full border-2 border-amber-900 border-opacity-30 bg-white bg-opacity-70 px-4 py-3 focus:outline-none focus:border-amber-800"
                 type="password"
-                placeholder="Nhập mật khẩu"
+                placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)"
                 value={form.password}
                 onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-amber-900 font-light mb-2">
+                Xác nhận mật khẩu
+              </label>
+              <input
+                className="w-full border-2 border-amber-900 border-opacity-30 bg-white bg-opacity-70 px-4 py-3 focus:outline-none focus:border-amber-800"
+                type="password"
+                placeholder="Nhập lại mật khẩu"
+                value={form.confirmPassword}
+                onChange={e => setForm(f => ({ ...f, confirmPassword: e.target.value }))}
               />
             </div>
 
@@ -101,7 +116,7 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full py-3 bg-amber-900 text-amber-50 font-light transition hover:bg-amber-950 disabled:opacity-50 mt-8"
             >
-              {loading ? 'Đang kết nối...' : 'Đăng nhập'}
+              {loading ? 'Đang đăng ký...' : 'Đăng Ký'}
             </button>
 
           </form>
@@ -112,12 +127,8 @@ export default function LoginPage() {
             <div className="flex-1 h-px bg-gradient-to-l from-transparent to-amber-900 opacity-30"></div>
           </div>
 
-          <p className="text-center text-xs text-amber-700 font-light mb-3">
-            Tài khoản demo: admin / admin123
-          </p>
-
           <p className="text-center text-xs text-amber-700 font-light">
-            Chưa có tài khoản? <Link to="/signup" className="text-amber-900 font-medium hover:underline">Đăng ký tại đây</Link>
+            Đã có tài khoản? <Link to="/login" className="text-amber-900 font-medium hover:underline">Đăng nhập tại đây</Link>
           </p>
 
         </div>

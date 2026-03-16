@@ -6,6 +6,7 @@ import ProtectedRoute   from './components/ProtectedRoute'
 import TreeRoute        from './components/TreeRoute'
 import Layout           from './components/Layout'
 import LoginPage        from './pages/LoginPage'
+import SignupPage       from './pages/SignupPage'
 import TreeSelectPage   from './pages/TreeSelectPage'
 import DashboardPage    from './pages/DashboardPage'
 import MembersPage      from './pages/MembersPage'
@@ -15,6 +16,7 @@ import TreePage         from './pages/TreePage'
 import EventsPage       from './pages/EventsPage'
 import ReportsPage      from './pages/ReportsPage'
 import AdminPage        from './pages/AdminPage'
+import ExportPage       from './pages/ExportPage'
 const qc = new QueryClient()
 
 export default function App() {
@@ -24,6 +26,7 @@ export default function App() {
         <Toaster position="top-right" />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
 
           {/* Đã login nhưng chưa chọn cây */}
           <Route element={<ProtectedRoute />}>
@@ -42,6 +45,7 @@ export default function App() {
                 <Route path="/members/:id"      element={<MemberDetailPage />} />
                 <Route path="/tree"      element={<TreePage />} />
                 <Route path="/events"    element={<EventsPage />} />
+                <Route path="/export"    element={<ExportPage />} />
                 <Route path="/reports"   element={<ReportsPage />} />
                 <Route path="/admin"     element={<AdminPage />} />
               </Route>

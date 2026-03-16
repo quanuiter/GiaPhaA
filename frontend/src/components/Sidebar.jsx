@@ -6,6 +6,7 @@ const navItems = [
   { to: '/members',   label: 'Thành viên' },
   { to: '/tree',      label: 'Phả đồ' },
   { to: '/events',    label: 'Sự kiện' },
+  { to: '/export',    label: 'Xuất dữ liệu' },
   { to: '/reports',   label: 'Báo cáo' },
   { to: '/admin',     label: 'Quản lý quyền hạn', admin: true },
 ]
