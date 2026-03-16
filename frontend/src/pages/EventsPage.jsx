@@ -52,22 +52,16 @@ export default function EventsPage() {
 
   const displayEvents = activeTab === 'upcoming' ? upcomingEvents : allEvents
 
-  const EventCard = ({ ev }) => (
-    <div className="relative bg-gradient-to-b from-amber-100 to-amber-50 rounded-sm border-2 border-amber-900 border-opacity-20 p-6 shadow-lg" style={{boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)'}}>
-      <div className="absolute top-2 left-2 w-4 h-4 border-t border-l border-amber-800 opacity-30"></div>
-      <div className="absolute top-2 right-2 w-4 h-4 border-t border-r border-amber-800 opacity-30"></div>
-      <div>
-        <span className="text-xs font-light text-amber-800" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>• {typeLabel[ev.type]}</span>
-        <p className="font-light text-amber-950 mt-2 text-lg" style={{fontFamily: 'Georgia, serif'}}>{ev.name}</p>
-      </div>
-      <div className="mt-4 space-y-2 text-sm text-amber-800 font-light" style={{fontFamily: 'Georgia, serif'}}>
-        <p>{new Date(ev.eventDate).toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-        {ev.location && <p>• {ev.location}</p>}
-        {ev.relatedMember && <p>• {ev.relatedMember.fullName}</p>}
-        {ev.note && <p className="text-xs text-amber-700 italic mt-2">{ev.note}</p>}
-      </div>
-    </div>
-  )
+  const handleDeleteEvent = async (eventId) => {
+    if (!window.confirm('Xác nhận xóa sự kiện này?')) return
+    try {
+      await treeApi(treeId).deleteEvent(eventId)
+      queryClient.invalidateQueries({ queryKey: ['events', treeId] })
+      queryClient.invalidateQueries({ queryKey: ['upcomingEvents', treeId] })
+    } catch (err) {
+      alert('Lỗi: ' + err.response?.data?.message || err.message)
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -210,16 +204,56 @@ export default function EventsPage() {
         </form>
       )}
 
-      {/* Events Grid */}
+      {/* Events Table */}
       {isLoading
         ? <div className="flex justify-center py-16"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-900 opacity-40"/></div>
         : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {displayEvents.map(ev => (
-              <EventCard key={ev.id} ev={ev} />
-            ))}
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-amber-100 border-b-2 border-amber-900 border-opacity-20">
+                  <th className="px-4 py-3 text-left text-sm font-light text-amber-950" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>Ngày</th>
+                  <th className="px-4 py-3 text-left text-sm font-light text-amber-950" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>Sự kiện</th>
+                  <th className="px-4 py-3 text-left text-sm font-light text-amber-950" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>Loại</th>
+                  <th className="px-4 py-3 text-left text-sm font-light text-amber-950" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>Địa điểm</th>
+                  <th className="px-4 py-3 text-left text-sm font-light text-amber-950" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>Liên quan</th>
+                  <th className="px-4 py-3 text-left text-sm font-light text-amber-950" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {displayEvents.map((ev, idx) => (
+                  <tr key={ev.id} className={`border-b border-amber-200 ${idx % 2 === 0 ? 'bg-white' : 'bg-amber-50'} hover:bg-amber-100 transition-colors`}>
+                    <td className="px-4 py-3 text-sm text-amber-900 font-light" style={{fontFamily: 'Georgia, serif'}}>
+                      {new Date(ev.eventDate).toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-amber-950 font-light" style={{fontFamily: 'Georgia, serif'}}>
+                      <span className="font-medium">{ev.name}</span>
+                      {ev.note && <p className="text-xs text-amber-700 italic mt-1">{ev.note}</p>}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-amber-800 font-light" style={{fontFamily: 'Georgia, serif'}}>
+                      {typeLabel[ev.type]}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-amber-800 font-light" style={{fontFamily: 'Georgia, serif'}}>
+                      {ev.location || '-'}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-amber-800 font-light" style={{fontFamily: 'Georgia, serif'}}>
+                      {ev.relatedMember?.fullName || '-'}
+                    </td>
+                    <td className="px-4 py-3 text-sm space-x-2">
+                      <button
+                        onClick={() => handleDeleteEvent(ev.id)}
+                        className="px-2 py-1 text-red-600 hover:bg-red-100 transition-colors text-xs border border-red-200 rounded-sm"
+                        style={{fontFamily: 'Georgia, serif'}}
+                      >
+                        Xóa
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
             {displayEvents.length === 0 && (
-              <div className="col-span-3 text-center py-16 text-amber-700 font-light">
+              <div className="text-center py-16 text-amber-700 font-light" style={{fontFamily: 'Georgia, serif'}}>
                 {activeTab === 'upcoming' ? 'Không có sự kiện sắp tới' : 'Chưa có sự kiện nào'}
               </div>
             )}

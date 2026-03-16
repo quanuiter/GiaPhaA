@@ -14,6 +14,7 @@ import MemberFormPage   from './pages/MemberFormPage'
 import TreePage         from './pages/TreePage'
 import EventsPage       from './pages/EventsPage'
 import ReportsPage      from './pages/ReportsPage'
+import AdminPage        from './pages/AdminPage'
 const qc = new QueryClient()
 
 export default function App() {
@@ -42,6 +43,7 @@ export default function App() {
                 <Route path="/tree"      element={<TreePage />} />
                 <Route path="/events"    element={<EventsPage />} />
                 <Route path="/reports"   element={<ReportsPage />} />
+                <Route path="/admin"     element={<AdminPage />} />
               </Route>
             </Route>
           </Route>

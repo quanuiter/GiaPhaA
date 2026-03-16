@@ -7,6 +7,7 @@ const navItems = [
   { to: '/tree',      label: 'Phả đồ' },
   { to: '/events',    label: 'Sự kiện' },
   { to: '/reports',   label: 'Báo cáo' },
+  { to: '/admin',     label: 'Quản lý quyền hạn', admin: true },
 ]
 
 const roleLabel = { admin: 'Quản trị viên', editor: 'Biên tập viên', viewer: 'Khách' }
@@ -29,12 +30,12 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 p-4 space-y-2">
-        {navItems.map(({ to, label }) => (
+        {navItems.map(({ to, label, admin }) => (
           <NavLink key={to} to={to}
             className={({ isActive }) =>
               `flex items-center px-4 py-2.5 text-sm font-light transition-all ${isActive 
                 ? 'bg-amber-900 text-amber-50 border-l-2 border-amber-900' 
-                : 'text-amber-900 hover:bg-amber-200 hover:bg-opacity-50'}`
+                : 'text-amber-900 hover:bg-amber-200 hover:bg-opacity-50'} ${admin ? 'border-t border-amber-200 mt-2 pt-2' : ''}`
             }
             style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>
             • {label}
