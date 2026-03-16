@@ -5,6 +5,9 @@ import { useAuthStore } from '../store/authStore'
 
 export default function AdminPage() {
   const [searchTerm, setSearchTerm] = useState('')
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [formData, setFormData] = useState({ username: '', role: 'editor' })
+  const [submitting, setSubmitting] = useState(false)
   const currentTree = useAuthStore(s => s.currentTree)
   const queryClient = useQueryClient()
   const treeId = currentTree?.id
@@ -44,6 +47,27 @@ export default function AdminPage() {
     }
   }
 
+  const handleAddUser = async (e) => {
+    e.preventDefault()
+    if (!formData.username.trim()) {
+      alert('Vui lòng nhập tên đăng nhập')
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      await treeApi(treeId).addTreeUser({ username: formData.username.trim(), role: formData.role })
+      refetch()
+      queryClient.invalidateQueries({ queryKey: ['treeUsers', treeId] })
+      setFormData({ username: '', role: 'editor' })
+      setShowAddForm(false)
+    } catch (err) {
+      alert('Lỗi thêm người dùng: ' + err.response?.data?.message || err.message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -59,7 +83,7 @@ export default function AdminPage() {
         <div className="flex-1 h-px bg-gradient-to-l from-transparent to-amber-900 opacity-30"></div>
       </div>
 
-      {/* Search Bar */}
+      {/* Search Bar and Add Button */}
       <div className="flex gap-3">
         <input
           type="text"
@@ -69,7 +93,73 @@ export default function AdminPage() {
           className="flex-1 px-4 py-2 border-2 border-amber-200 rounded-sm text-sm focus:outline-none focus:border-amber-900 font-light"
           style={{fontFamily: 'Georgia, serif'}}
         />
+        <button
+          onClick={() => setShowAddForm(!showAddForm)}
+          className="px-4 py-2 bg-amber-900 text-white text-sm font-light hover:bg-amber-800 transition-colors rounded-sm"
+          style={{fontFamily: 'Georgia, serif'}}
+        >
+          + Thêm người dùng
+        </button>
       </div>
+
+      {/* Add User Form */}
+      {showAddForm && (
+        <form onSubmit={handleAddUser} className="bg-amber-50 border-2 border-amber-200 p-6 rounded-sm space-y-4">
+          <h3 className="text-lg font-light text-amber-950" style={{fontFamily: 'Georgia, serif'}}>Thêm người dùng mới</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-light text-amber-900 mb-2" style={{fontFamily: 'Georgia, serif'}}>Tên đăng nhập *</label>
+              <input
+                type="text"
+                required
+                value={formData.username}
+                onChange={(e) => setFormData({...formData, username: e.target.value})}
+                placeholder="Nhập tên đăng nhập"
+                className="w-full px-3 py-2 border border-amber-200 rounded-sm text-sm focus:outline-none focus:border-amber-900"
+                style={{fontFamily: 'Georgia, serif'}}
+              />
+              <p className="text-xs text-amber-600 mt-1 font-light" style={{fontFamily: 'Georgia, serif'}}>Người dùng phải tồn tại trong hệ thống</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-light text-amber-900 mb-2" style={{fontFamily: 'Georgia, serif'}}>Quyền hạn *</label>
+              <select
+                value={formData.role}
+                onChange={(e) => setFormData({...formData, role: e.target.value})}
+                className="w-full px-3 py-2 border border-amber-200 rounded-sm text-sm focus:outline-none focus:border-amber-900 bg-white"
+                style={{fontFamily: 'Georgia, serif'}}
+              >
+                <option value="admin">Quản trị viên</option>
+                <option value="editor">Biên tập viên</option>
+                <option value="viewer">Khách</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="px-4 py-2 bg-amber-900 text-white text-sm font-light hover:bg-amber-800 disabled:opacity-50 transition-colors rounded-sm"
+              style={{fontFamily: 'Georgia, serif'}}
+            >
+              {submitting ? 'Đang thêm...' : 'Thêm người dùng'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowAddForm(false)
+                setFormData({ username: '', role: 'editor' })
+              }}
+              className="px-4 py-2 border border-amber-900 text-amber-900 text-sm font-light hover:bg-amber-50 transition-colors rounded-sm"
+              style={{fontFamily: 'Georgia, serif'}}
+            >
+              Hủy
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* Users Table */}
       {isLoading ? (
@@ -153,7 +243,7 @@ export default function AdminPage() {
           <span className="font-medium">Hướng dẫn quyền hạn:</span> 
           <br/>• <span className="font-medium">Quản trị viên:</span> Có toàn bộ quyền truy cập và quản lý
           <br/>• <span className="font-medium">Biên tập viên:</span> Có thể thêm, sửa, xóa dữ liệu
-          <br/>• <span className="font-medium">Khách:</span> Chỉ có thể xem dữ liệu
+          <br/>• <span className="font-medium">Khách:</span> Chỉ có th�� xem dữ liệu
         </p>
       </div>
     </div>

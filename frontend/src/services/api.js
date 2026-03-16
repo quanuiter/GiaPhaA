@@ -53,6 +53,7 @@ export const treeApi = (treeId) => ({
 
   // User & Permissions Management
   treeUsers:    ()              => api.get(`/trees/${treeId}/users`),
+  addTreeUser:  (data)          => api.post(`/trees/${treeId}/users`, data),
   updateUserRole: (userId, role) => api.put(`/trees/${treeId}/users/${userId}`, { role }),
   removeTreeUser: (userId)      => api.delete(`/trees/${treeId}/users/${userId}`),
 })
