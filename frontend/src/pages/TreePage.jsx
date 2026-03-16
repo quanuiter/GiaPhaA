@@ -72,7 +72,7 @@ function FamilyFlow({ data, edgeType }) {
       <MiniMap
         nodeColor={n =>
           n.data?.isDeceased ? '#b89968'
-          : n.data?.gender === 'male' ? '#a16207' : '#d97706'
+          : n.data?.gender === 'male' ? '#0099FF' : '#FFC0CB'
         }
         maskColor="rgba(180,140,100,.5)"
         style={{ borderRadius: 10, border: '1px solid #d4c9b8' }}
@@ -149,7 +149,6 @@ export default function TreePage() {
         padding: '10px 16px', background: '#faf8f3',
         borderBottom: '1px solid #e5dcc8', flexShrink: 0, zIndex: 10,
       }}>
-        <span style={{ fontSize: 20 }}>🌳</span>
         <span style={{ fontWeight: 700, fontSize: 15, color: '#78350f' }}>Phả đồ</span>
         <span style={{
           fontSize: 12, color: '#8b5a2b', background: '#fef3c7',
@@ -178,8 +177,8 @@ export default function TreePage() {
         {/* Legend */}
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           {[
-            { shape: 'rect', color: '#a16207', bg: '#fed7aa', label: 'Nam' },
-            { shape: 'rect', color: '#d97706', bg: '#fde68a', label: 'Nữ' },
+            { shape: 'rect', color: '#0099FF', bg: '#0099FF', label: 'Nam' },
+            { shape: 'rect', color: '#FFC0CB', bg: '#FFC0CB', label: 'Nữ' },
             { shape: 'rect', color: '#b89968', bg: '#dcc9b6', label: 'Đã mất' },
             { shape: 'line', color: MARRIAGE_COLORS.living.stroke,   dash: false, label: 'Sống chung' },
             { shape: 'line', color: MARRIAGE_COLORS.divorced.stroke, dash: true,  label: 'Ly hôn' },

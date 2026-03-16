@@ -8,7 +8,7 @@ export default function MemberNode({ data }) {
   const isMale = data.gender === 'male'
   const dead   = data.isDeceased
 
-  const cardBg = dead ? '#dcc9b6' : isMale ? '#fed7aa' : '#fde68a'
+  const cardBg = dead ? '#dcc9b6' : isMale ? '#66CCFF' : '#FFC0CB'
   const border = dead ? '#b89968' : isMale ? '#a16207' : '#d97706'
   const gearBg = dead ? '#8b6d47' : isMale ? '#92400e' : '#b45309'
   const badgeBg= dead ? '#6b5744' : isMale ? '#78350f' : '#a16207'
