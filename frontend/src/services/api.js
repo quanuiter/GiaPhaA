@@ -50,6 +50,15 @@ export const treeApi = (treeId) => ({
   updateEvent:  (id, data)      => api.put(`/trees/${treeId}/events/${id}`, data),
   deleteEvent:  (id)            => api.delete(`/trees/${treeId}/events/${id}`),
   treeData:     ()              => api.get(`/trees/${treeId}/tree`),
+
+  // User & Permissions Management
+  treeUsers:    ()              => api.get(`/trees/${treeId}/users`),
+  addTreeUser:  (data)          => api.post(`/trees/${treeId}/users`, data),
+  updateUserRole: (userId, role) => api.put(`/trees/${treeId}/users/${userId}`, { role }),
+  removeTreeUser: (userId)      => api.delete(`/trees/${treeId}/users/${userId}`),
+  pendingRequests: () => api.get(`/trees/${treeId}/pending-requests`),
+  approveRequest: (userId, data) => api.put(`/trees/${treeId}/requests/${userId}/approve`, data),
+  rejectRequest: (userId) => api.delete(`/trees/${treeId}/requests/${userId}/reject`)
 })
 
 export default api
