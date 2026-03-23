@@ -2,13 +2,18 @@ import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { treeApi } from '../services/api'
 import { useAuthStore } from '../store/authStore'
+import { Solar } from 'lunar-javascript'
 
 export default function EventsPage() {
   const [activeTab, setActiveTab] = useState('upcoming')
   const [showAddForm, setShowAddForm] = useState(false)
-  const [formData, setFormData] = useState({ type: 'meeting', name: '', eventDate: '', location: '', note: '' })
+  const [formData, setFormData] = useState({ type: 'meeting', name: '', eventDate: '', lunarDate: '', location: '', note: '' })
   const [submitting, setSubmitting] = useState(false)
   const currentTree = useAuthStore(s => s.currentTree)
+  
+  const myRole = currentTree?.myRole
+  const canEdit = ['admin', 'editor'].includes(myRole)
+  
   const queryClient = useQueryClient()
   const treeId = currentTree?.id
 
@@ -26,6 +31,23 @@ export default function EventsPage() {
 
   const typeLabel = { anniversary: 'Ngày giỗ', meeting: 'Họp họ', other: 'Sự kiện khác' }
 
+  // Hàm tự động tính ngày Âm lịch khi chọn ngày Dương lịch
+  const handleDateChange = (e) => {
+    const val = e.target.value
+    let lunarStr = ''
+    if (val) {
+      try {
+        const [y, m, d] = val.split('-')
+        const solar = Solar.fromYmd(parseInt(y, 10), parseInt(m, 10), parseInt(d, 10))
+        const lunar = solar.getLunar()
+        const lDay = lunar.getDay().toString().padStart(2, '0')
+        const lMonth = lunar.getMonth().toString().padStart(2, '0')
+        lunarStr = `${lDay}/${lMonth}/${lunar.getYear()}`
+      } catch (err) {}
+    }
+    setFormData(f => ({ ...f, eventDate: val, lunarDate: lunarStr }))
+  }
+
   const handleAddEvent = async (e) => {
     e.preventDefault()
     if (!formData.name || !formData.eventDate) {
@@ -41,7 +63,7 @@ export default function EventsPage() {
       })
       queryClient.invalidateQueries({ queryKey: ['events', treeId] })
       queryClient.invalidateQueries({ queryKey: ['upcomingEvents', treeId] })
-      setFormData({ type: 'meeting', name: '', eventDate: '', location: '', note: '' })
+      setFormData({ type: 'meeting', name: '', eventDate: '', lunarDate: '', location: '', note: '' })
       setShowAddForm(false)
     } catch (err) {
       alert('Lỗi: ' + err.response?.data?.message || err.message)
@@ -103,17 +125,19 @@ export default function EventsPage() {
             Tất cả sự kiện
           </button>
         </div>
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="px-4 py-2 bg-amber-900 text-white text-sm font-light hover:bg-amber-800 transition-colors rounded-sm"
-          style={{fontFamily: 'Georgia, serif'}}
-        >
-          + Thêm sự kiện
-        </button>
+        {canEdit && (
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="px-4 py-2 bg-amber-900 text-white text-sm font-light hover:bg-amber-800 transition-colors rounded-sm"
+            style={{fontFamily: 'Georgia, serif'}}
+          >
+            + Thêm sự kiện
+          </button>
+        )}
       </div>
 
       {/* Add Event Form */}
-      {showAddForm && (
+      {canEdit && showAddForm && (
         <form onSubmit={handleAddEvent} className="bg-amber-50 border-2 border-amber-200 p-6 rounded-sm space-y-4">
           <h3 className="text-lg font-light text-amber-950" style={{fontFamily: 'Georgia, serif'}}>Thêm sự kiện mới</h3>
           
@@ -150,9 +174,12 @@ export default function EventsPage() {
                 type="date"
                 required
                 value={formData.eventDate}
-                onChange={(e) => setFormData({...formData, eventDate: e.target.value})}
+                onChange={handleDateChange}
                 className="w-full px-3 py-2 border border-amber-200 rounded-sm text-sm focus:outline-none focus:border-amber-900"
               />
+              {formData.lunarDate && (
+                <p className="text-xs text-amber-700 mt-1 italic font-light">Âm lịch: {formData.lunarDate}</p>
+              )}
             </div>
 
             <div>
@@ -193,7 +220,7 @@ export default function EventsPage() {
               type="button"
               onClick={() => {
                 setShowAddForm(false)
-                setFormData({ type: 'meeting', name: '', eventDate: '', location: '', note: '' })
+                setFormData({ type: 'meeting', name: '', eventDate: '', lunarDate: '', location: '', note: '' })
               }}
               className="px-4 py-2 border border-amber-900 text-amber-900 text-sm font-light hover:bg-amber-50 transition-colors rounded-sm"
               style={{fontFamily: 'Georgia, serif'}}
@@ -217,7 +244,7 @@ export default function EventsPage() {
                   <th className="px-4 py-3 text-left text-sm font-light text-amber-950" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>Loại</th>
                   <th className="px-4 py-3 text-left text-sm font-light text-amber-950" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>Địa điểm</th>
                   <th className="px-4 py-3 text-left text-sm font-light text-amber-950" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>Liên quan</th>
-                  <th className="px-4 py-3 text-left text-sm font-light text-amber-950" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>Hành động</th>
+                  {canEdit && <th className="px-4 py-3 text-left text-sm font-light text-amber-950" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.05em'}}>Hành động</th>}
                 </tr>
               </thead>
               <tbody>
@@ -225,6 +252,7 @@ export default function EventsPage() {
                   <tr key={ev.id} className={`border-b border-amber-200 ${idx % 2 === 0 ? 'bg-white' : 'bg-amber-50'} hover:bg-amber-100 transition-colors`}>
                     <td className="px-4 py-3 text-sm text-amber-900 font-light" style={{fontFamily: 'Georgia, serif'}}>
                       {new Date(ev.eventDate).toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                      {ev.lunarDate && <div className="text-xs text-amber-700 mt-1">({ev.lunarDate} Âm lịch)</div>}
                     </td>
                     <td className="px-4 py-3 text-sm text-amber-950 font-light" style={{fontFamily: 'Georgia, serif'}}>
                       <span className="font-medium">{ev.name}</span>
@@ -239,15 +267,19 @@ export default function EventsPage() {
                     <td className="px-4 py-3 text-sm text-amber-800 font-light" style={{fontFamily: 'Georgia, serif'}}>
                       {ev.relatedMember?.fullName || '-'}
                     </td>
-                    <td className="px-4 py-3 text-sm space-x-2">
-                      <button
-                        onClick={() => handleDeleteEvent(ev.id)}
-                        className="px-2 py-1 text-red-600 hover:bg-red-100 transition-colors text-xs border border-red-200 rounded-sm"
-                        style={{fontFamily: 'Georgia, serif'}}
-                      >
-                        Xóa
-                      </button>
-                    </td>
+                    {canEdit && (
+                      <td className="px-4 py-3 text-sm space-x-2">
+                        {ev.canDelete !== false && (
+                          <button
+                            onClick={() => handleDeleteEvent(ev.id)}
+                            className="px-2 py-1 text-red-600 hover:bg-red-100 transition-colors text-xs border border-red-200 rounded-sm"
+                            style={{fontFamily: 'Georgia, serif'}}
+                          >
+                            Xóa
+                          </button>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

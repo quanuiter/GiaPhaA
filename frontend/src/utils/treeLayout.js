@@ -5,18 +5,18 @@
 import { MarkerType } from '@xyflow/react'
 
 // ── Kích thước node ─────────────────────────────────────────
-export const NODE_W     = 152
+export const NODE_W     = 140
 export const NODE_H     = 180
-const SPOUSE_GAP        = 28   // khoảng cách giữa chồng và vợ (không có node ở giữa)
-const SIBLING_GAP       = 36   // khoảng cách ngang giữa các anh em
-const GEN_GAP           = 130  // khoảng cách dọc giữa các đời
+const SPOUSE_GAP        = 20   // khoảng cách giữa chồng và vợ (không có node ở giữa)
+const SIBLING_GAP       = 40   // khoảng cách ngang giữa các anh em
+const GEN_GAP           = 100  // khoảng cách dọc giữa các đời
 const ROOT_GAP          = 80   // khoảng cách giữa các cây gốc khác nhau
 
 // ── Màu đường nối hôn nhân ──────────────────────────────────
 export const MARRIAGE_COLORS = {
-  living:   { stroke: '#b45309', strokeWidth: 2.5, dasharray: null },
-  divorced: { stroke: '#d97706', strokeWidth: 2,   dasharray: '8 5' },
-  widowed:  { stroke: '#a89968', strokeWidth: 2,   dasharray: '6 4' },
+  living:   { stroke: '#d1d5db', strokeWidth: 1.5, dasharray: '4 4' },
+  divorced: { stroke: '#d1d5db', strokeWidth: 1,   dasharray: '2 4' },
+  widowed:  { stroke: '#d1d5db', strokeWidth: 1.5, dasharray: '4 4' },
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -24,27 +24,45 @@ export const MARRIAGE_COLORS = {
 // ─────────────────────────────────────────────────────────────
 
 /** Xác định xem một thành viên có phải là huyết thống chính không */
-function isBloodline(m, memberById) {
+function isBloodline(m, memberById, marriages = []) {
   if (!m) return false;
-  return !!(m.fatherId || m.motherId || m.generation === 1);
+  // Có cha mẹ thì chắc chắn là huyết thống
+  if (m.fatherId || m.motherId) return true;
+  
+  // Với đời 1 (không có cha mẹ): kiểm tra xem có phải là người dâu/rể được thêm vào sau không.
+  // Dựa vào ID: Vợ chồng cùng đời 1, ai có ID nhỏ hơn (tạo trước) là gốc, người kia là dâu/rể.
+  if (m.generation === 1) {
+    if (!marriages || marriages.length === 0) return true;
+    const isSpouse = marriages.some(mar => {
+      const spouseId = mar.husbandId === m.id ? mar.wifeId : (mar.wifeId === m.id ? mar.husbandId : null);
+      if (!spouseId) return false;
+      const spouse = memberById[spouseId];
+      if (spouse && !spouse.fatherId && !spouse.motherId && spouse.generation === 1) {
+        return spouse.id < m.id;
+      }
+      return false;
+    });
+    return !isSpouse;
+  }
+  return false;
 }
 
 /** Người neo con cái (anchor): Chọn người mang huyết thống chính */
-function anchorOf(member, memberById) {
+function anchorOf(member, memberById, marriages = []) {
   if (!memberById) return member.fatherId || member.motherId || null;
   
   const father = memberById[member.fatherId];
   const mother = memberById[member.motherId];
 
-  if (father && isBloodline(father, memberById)) return father.id;
-  if (mother && isBloodline(mother, memberById)) return mother.id;
+  if (father && isBloodline(father, memberById, marriages)) return father.id;
+  if (mother && isBloodline(mother, memberById, marriages)) return mother.id;
   
   return member.fatherId || member.motherId || null;
 }
 
 /** Danh sách con cái được neo vào memberId này */
-function anchoredChildren(memberId, members, memberById) {
-  return members.filter(m => anchorOf(m, memberById) === memberId)
+function anchoredChildren(memberId, members, memberById, marriages = []) {
+  return members.filter(m => anchorOf(m, memberById, marriages) === memberId)
 }
 
 /** Chiều rộng subtree đệ quy (tính từ centerX) */
@@ -59,7 +77,7 @@ function subtreeWidth(memberId, members, marriages, memberById, visited = new Se
   ).length
   const selfW = NODE_W + spouseCount * (SPOUSE_GAP + NODE_W)
 
-  const kids = anchoredChildren(memberId, members, memberById).filter(c => !v.has(c.id))
+  const kids = anchoredChildren(memberId, members, memberById, marriages).filter(c => !v.has(c.id))
   if (kids.length === 0) return selfW
 
   const kidsW = kids.reduce((sum, c, i) =>
@@ -105,7 +123,7 @@ function placeMember(memberId, cx, y, members, marriages, memberById, marriagesO
   })
 
   // Đặt con cái
-  const kids = anchoredChildren(memberId, members, memberById).filter(c => !placed.has(c.id))
+  const kids = anchoredChildren(memberId, members, memberById, marriages).filter(c => !placed.has(c.id))
   if (kids.length === 0) return
 
   const kidY = absoluteY + NODE_H + GEN_GAP
@@ -138,7 +156,7 @@ function buildLayout(members, marriages) {
   })
 
   // Gốc: không có cha/mẹ neo
-  const roots = members.filter(m => !anchorOf(m, memberById))
+  const roots = members.filter(m => !anchorOf(m, memberById, marriages))
 
   const rootHusbands = roots.filter(m =>
     (marriagesOf[m.id] || []).some(mar => mar.husbandId === m.id)
@@ -170,16 +188,25 @@ function buildLayout(members, marriages) {
 // ─────────────────────────────────────────────────────────────
 //  Build React Flow nodes + edges
 // ─────────────────────────────────────────────────────────────
-export function buildGraph(members, marriages, edgeType = 'smoothstep') {
-  const positions = buildLayout(members, marriages)
+export function buildGraph(members, marriages, edgeType = 'smoothstep', hideSpouses = false) {
+  const fullMemberById = {}
+  members.forEach(m => { fullMemberById[m.id] = m })
+
+  let activeMembers = members
+  let activeMarriages = marriages
+
+  if (hideSpouses) {
+    activeMembers = members.filter(m => isBloodline(m, fullMemberById, marriages))
+    const activeIds = new Set(activeMembers.map(m => m.id))
+    activeMarriages = marriages.filter(mar => activeIds.has(mar.husbandId) && activeIds.has(mar.wifeId))
+  }
+
+  const positions = buildLayout(activeMembers, activeMarriages)
   const nodes = []
   const edges = []
   
-  const memberById = {}
-  members.forEach(m => { memberById[m.id] = m })
-
   // ── Member nodes ─────────────────────────────────────────
-  members.forEach(m => {
+  activeMembers.forEach(m => {
     const pos = positions[`m-${m.id}`]
     if (!pos) return
     nodes.push({
@@ -204,13 +231,14 @@ export function buildGraph(members, marriages, edgeType = 'smoothstep') {
         bio: m.bio,
         birthDateLunar: m.birthDateLunar,
         phone: m.phone,
-        email: m.email
+        email: m.email,
+        isBloodline: isBloodline(m, fullMemberById, marriages)
       },
     })
   })
 
   // ── Marriage edges ───────────────────────────────────────
-  marriages.forEach(mar => {
+  activeMarriages.forEach(mar => {
     const hPos = positions[`m-${mar.husbandId}`]
     const wPos = positions[`m-${mar.wifeId}`]
     if (!hPos || !wPos) return
@@ -243,14 +271,14 @@ export function buildGraph(members, marriages, edgeType = 'smoothstep') {
   })
 
   // ── Parent → child edges ──────────────────────────────────
-  members.forEach(m => {
-    const anchor = anchorOf(m, memberById)
+  activeMembers.forEach(m => {
+    const anchor = anchorOf(m, fullMemberById, marriages)
     if (!anchor || !positions[`m-${m.id}`] || !positions[`m-${anchor}`]) return
     
     // Nếu là con nuôi (isAdopted = true), vẽ nét đứt
     const edgeStyle = m.isAdopted 
-        ? { stroke: '#8b6d47', strokeWidth: 2, strokeDasharray: '5 5' } 
-        : { stroke: '#8b6d47', strokeWidth: 2 };
+        ? { stroke: '#9ca3af', strokeWidth: 1.5, strokeDasharray: '5 5' } 
+        : { stroke: '#9ca3af', strokeWidth: 1.5 };
 
     edges.push({
       id:        `ec-${m.id}`,
@@ -258,27 +286,25 @@ export function buildGraph(members, marriages, edgeType = 'smoothstep') {
       target:    `m-${m.id}`,
       type:      edgeType,
       style:     edgeStyle,
-      markerEnd: { type: MarkerType.ArrowClosed, width: 9, height: 9, color: '#8b6d47' },
     })
   })
 
   // ── Mother → child dashed edges (để phân biệt khi một cha có nhiều vợ) ──────────────────────────────────
-  members.forEach(m => {
+  activeMembers.forEach(m => {
     if (!m.motherId) return
     const motherPos = positions[`m-${m.motherId}`]
     const childPos = positions[`m-${m.id}`]
     if (!motherPos || !childPos) return
     
     // Nếu mẹ không phải là anchor (có nghĩa là có một cha và nhiều mẹ), vẽ nét đứt từ mẹ
-    const anchor = anchorOf(m, memberById)
+    const anchor = anchorOf(m, fullMemberById, marriages)
     if (anchor !== m.motherId) {
       edges.push({
         id:        `em-${m.id}`,
         source:    `m-${m.motherId}`,
         target:    `m-${m.id}`,
-        type:      'straight',  // Luôn dùng đường thẳng cho mẹ → con
-        style:     { stroke: '#c8b5a0', strokeWidth: 1.8, strokeDasharray: '5 4' },
-        markerEnd: { type: MarkerType.ArrowClosed, width: 8, height: 8, color: '#c8b5a0' },
+        type:      'default',  // Luôn dùng đường cong nhánh cây cho mẹ → con
+        style:     { stroke: '#9ca3af', strokeWidth: 1.2, strokeDasharray: '4 4' },
       })
     }
   })

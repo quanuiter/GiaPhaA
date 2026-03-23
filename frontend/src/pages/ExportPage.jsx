@@ -1,13 +1,18 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { treeApi } from '../services/api'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
+import html2canvas from 'html2canvas'
+import { jsPDF } from 'jspdf'
+import { ReactFlowProvider } from '@xyflow/react'
+import { FamilyFlow } from './TreePage'
 
 export default function ExportPage() {
   const [activeTab, setActiveTab] = useState('tree')
-  const [pdfOptions, setPdfOptions] = useState({ fontSize: 12, lineType: 'curve', includeNotes: true })
+  const [pdfOptions, setPdfOptions] = useState({ fontSize: 12, lineType: 'smoothstep', includeNotes: true, hideSpouses: false })
   const [exporting, setExporting] = useState(false)
+  const treeRef = useRef(null)
   const currentTree = useAuthStore(s => s.currentTree)
   const userRole = useAuthStore(s => s.userRole)
   const treeId = currentTree?.id
@@ -35,10 +40,69 @@ export default function ExportPage() {
 
     setExporting(true)
     try {
-      // For now, generate a simple text-based PDF representation
-      const canvas = await generateTreeCanvas(treeData)
-      const pdf = await htmlToSimplePDF(canvas, 'Gia Pha - ' + currentTree?.name)
-      downloadFile(pdf, 'tree.pdf', 'application/pdf')
+      if (!treeRef.current) throw new Error('Không tìm thấy giao diện phả đồ để xuất')
+
+      // 1. Tạm ẩn các nút điều khiển (Controls, MiniMap) để bản in PDF sạch sẽ
+      const controls = treeRef.current.querySelector('.react-flow__controls')
+      const minimap = treeRef.current.querySelector('.react-flow__minimap')
+      if (controls) controls.style.display = 'none'
+      if (minimap) minimap.style.display = 'none'
+
+      // 2. TÍNH TOÁN BÙ TRỪ TỶ LỆ ZOOM (ZOOM COMPENSATION) ĐỂ HIỂN THỊ RÕ ĐƯỜNG NỐI
+      // Khi cây gia phả quá lớn, React Flow tự động thu nhỏ (zoom out). VD: zoom = 0.1
+      // Đường nối 2px sẽ bị thu nhỏ thành 0.2px trên màn hình, khiến html2canvas (vẽ pixel) bỏ qua.
+      // => Giải pháp: Lấy tỷ lệ zoom hiện tại, ép độ dày đường nối tăng tỷ lệ nghịch với nó.
+      const viewport = treeRef.current.querySelector('.react-flow__viewport')
+      let currentZoom = 1
+      if (viewport && viewport.style.transform) {
+        const match = viewport.style.transform.match(/scale\(([^)]+)\)/)
+        if (match && match[1]) currentZoom = parseFloat(match[1]) || 1
+      }
+      
+      // Hệ số nhân bù trừ (VD: zoom 0.1 -> nhân 10 lần). Giới hạn max 40 để tránh lỗi vỡ nét.
+      const strokeMultiplier = Math.min(Math.max(1 / currentZoom, 1), 40)
+
+      const edges = treeRef.current.querySelectorAll('.react-flow__edges path')
+      const originalStyles = []
+      edges.forEach(edge => {
+        // Lưu lại toàn bộ CSS gốc để khôi phục sau khi chụp
+        originalStyles.push({ element: edge, cssText: edge.style.cssText })
+        
+        const currentWidth = parseFloat(edge.style.strokeWidth) || parseFloat(edge.getAttribute('stroke-width')) || 2
+        edge.style.setProperty('stroke-width', `${currentWidth * strokeMultiplier}px`, 'important')
+        
+        // Bù trừ luôn cho khoảng cách nét đứt (đường ly hôn / mẹ con)
+        const dashArray = edge.style.strokeDasharray || edge.getAttribute('stroke-dasharray')
+        if (dashArray && dashArray !== 'none') {
+          const newDash = dashArray.split(/[\s,]+/).filter(Boolean).map(n => parseFloat(n) * strokeMultiplier).join(' ')
+          edge.style.setProperty('stroke-dasharray', newDash, 'important')
+        }
+        
+        edge.style.setProperty('opacity', '1', 'important')
+      })
+
+      // 3. Xử lý lỗi MỜ ẢNH: Tăng scale lên 4 để chụp ảnh độ phân giải siêu nét (High DPI)
+      const canvas = await html2canvas(treeRef.current, { 
+        scale: 4, 
+        useCORS: true,
+        backgroundColor: '#faf6f0',
+        logging: false
+      })
+      const imgData = canvas.toDataURL('image/jpeg', 1.0)
+      
+      // 4. Khôi phục lại giao diện hiển thị ban đầu
+      originalStyles.forEach(({ element, cssText }) => { element.style.cssText = cssText })
+      if (controls) controls.style.display = ''
+      if (minimap) minimap.style.display = ''
+
+      // 5. Tạo PDF giữ nguyên kích thước bố cục nhưng nén chất lượng ảnh 4x vào bên trong
+      const pdfWidth = treeRef.current.offsetWidth
+      const pdfHeight = treeRef.current.offsetHeight
+      const pdf = new jsPDF({ orientation: pdfWidth > pdfHeight ? 'landscape' : 'portrait', unit: 'px', format: [pdfWidth, pdfHeight] })
+      
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight)
+      pdf.save(`Gia_Pha_${currentTree?.name || 'Tree'}.pdf`)
+
       toast.success('Xuất phả đồ thành công!')
     } catch (err) {
       toast.error('Lỗi xuất file: ' + err.message)
@@ -79,52 +143,6 @@ export default function ExportPage() {
     ].join('\n')
 
     return '\uFEFF' + csvContent // Add BOM for proper UTF-8 encoding
-  }
-
-  const generateTreeCanvas = (data) => {
-    // Simple HTML representation of tree data
-    let html = '<h1>' + currentTree?.name + '</h1>'
-    if (data) {
-      html += '<pre>' + JSON.stringify(data, null, 2) + '</pre>'
-    }
-    return html
-  }
-
-  const htmlToSimplePDF = async (htmlContent, filename) => {
-    // Simple PDF generation using text format
-    const pdfContent = `%PDF-1.4
-1 0 obj
-<< /Type /Catalog /Pages 2 0 R >>
-endobj
-2 0 obj
-<< /Type /Pages /Kids [3 0 R] /Count 1 >>
-endobj
-3 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R >>
-endobj
-4 0 obj
-<< /Length 100 >>
-stream
-BT
-/F1 ${pdfOptions.fontSize} Tf
-50 750 Td
-(Gia Pha - ${currentTree?.name}) Tj
-ET
-endstream
-endobj
-xref
-0 5
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000214 00000 n 
-trailer
-<< /Size 5 /Root 1 0 R >>
-startxref
-364
-%%EOF`
-    return pdfContent
   }
 
   const downloadFile = (content, filename, mimeType) => {
@@ -228,23 +246,52 @@ startxref
                   className="w-full px-3 py-2 border border-amber-200 rounded-sm text-sm focus:outline-none focus:border-amber-900 bg-white"
                   style={{fontFamily: 'Georgia, serif'}}
                 >
-                  <option value="curve">Cong</option>
+                  <option value="smoothstep">Cong (Smoothstep)</option>
+                  <option value="default">Cong (Bezier)</option>
                   <option value="straight">Thẳng</option>
-                  <option value="step">Bậc thang</option>
+                  <option value="step">Gấp khúc</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-light text-amber-900 mb-2" style={{fontFamily: 'Georgia, serif'}}>Ghi chú</label>
-                <label className="flex items-center gap-2 mt-2">
-                  <input
-                    type="checkbox"
-                    checked={pdfOptions.includeNotes}
-                    onChange={(e) => setPdfOptions({...pdfOptions, includeNotes: e.target.checked})}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm font-light text-amber-900" style={{fontFamily: 'Georgia, serif'}}>Bao gồm ghi chú</span>
-                </label>
+                <label className="block text-sm font-light text-amber-900 mb-2" style={{fontFamily: 'Georgia, serif'}}>Tùy chọn khác</label>
+                <div className="flex flex-col gap-2 mt-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={pdfOptions.includeNotes}
+                      onChange={(e) => setPdfOptions({...pdfOptions, includeNotes: e.target.checked})}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm font-light text-amber-900" style={{fontFamily: 'Georgia, serif'}}>Bao gồm ghi chú</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={pdfOptions.hideSpouses}
+                      onChange={(e) => setPdfOptions({...pdfOptions, hideSpouses: e.target.checked})}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm font-light text-amber-900" style={{fontFamily: 'Georgia, serif'}}>Ẩn hôn phối</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* KHU VỰC RENDER PHẢ ĐỒ ĐỂ CHỤP PDF */}
+            <div className="mt-8 bg-white border border-amber-200 rounded-sm overflow-hidden">
+              <div className="p-4 border-b border-amber-200 bg-amber-50">
+                <h4 className="text-sm font-medium text-amber-900" style={{fontFamily: 'Georgia, serif'}}>Bản xem trước khi xuất file:</h4>
+              </div>
+              {/* Cố định chiều cao lớn hơn (800px) để giảm bớt tỷ lệ bị thu nhỏ của cây */}
+              <div ref={treeRef} className="w-full bg-[#faf6f0] h-[800px] relative">
+                {treeDataLoading ? (
+                  <div className="flex justify-center items-center h-full text-amber-900 font-light">Đang tải phả đồ...</div>
+                ) : treeData ? (
+                  <ReactFlowProvider>
+                    <FamilyFlow data={treeData} edgeType={pdfOptions.lineType} hideSpouses={pdfOptions.hideSpouses} />
+                  </ReactFlowProvider>
+                ) : null}
               </div>
             </div>
 

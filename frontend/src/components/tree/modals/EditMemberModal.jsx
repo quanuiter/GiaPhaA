@@ -121,7 +121,7 @@ const [form, setForm] = useState({
     <FloatModal
       title="Chỉnh sửa hồ sơ"
       subtitle={`${member?.fullName}`}
-      onClose={onClose} width={540}
+      onClose={onClose} width={600}
     >
       {/* ── Ảnh đại diện ───────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>

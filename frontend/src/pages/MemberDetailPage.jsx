@@ -267,9 +267,10 @@ export default function MemberDetailPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
                 ['Ngày sinh', m.birthDate ? new Date(m.birthDate).toLocaleDateString('vi-VN') : null],
+                ['Âm lịch', m.birthDateLunar],
                 ['Nơi sinh', m.birthPlace],
-                ['Nghề nghiệp', m.occupation],
                 ['Quê quán', m.hometown],
+                ['Nghề nghiệp', m.occupation],
                 ['Tên gọi khác', m.nickname],
               ].filter(([, v]) => v).map(([label, value]) => (
                 <div key={label} className="bg-amber-50 rounded-lg p-3 border border-amber-900 border-opacity-10">
@@ -278,6 +279,33 @@ export default function MemberDetailPage() {
                 </div>
               ))}
             </div>
+
+            {/* Contact Info */}
+            {(m.phone || m.email || m.address) && (
+              <>
+                <h4 className="font-light text-amber-950 pb-2 border-b border-amber-900 border-opacity-20 mt-6 mb-3" style={{ fontFamily: 'Georgia, serif', fontSize: '1rem' }}>Liên Hệ</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    ['Số điện thoại', m.phone],
+                    ['Email', m.email],
+                    ['Địa chỉ', m.address],
+                  ].filter(([, v]) => v).map(([label, value]) => (
+                    <div key={label} className={`bg-amber-50 rounded-lg p-3 border border-amber-900 border-opacity-10 ${label === 'Địa chỉ' ? 'sm:col-span-2' : ''}`}>
+                      <p className="text-xs text-amber-700 font-light mb-1" style={{ fontFamily: 'Georgia, serif' }}>{label}</p>
+                      <p className="font-light text-amber-950" style={{ fontFamily: 'Georgia, serif' }}>{value}</p>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+            
+            {/* Bio */}
+            {m.bio && (
+              <div className="mt-6 bg-amber-100 bg-opacity-50 p-4 rounded-lg border border-amber-900 border-opacity-20 italic font-light text-amber-950 leading-relaxed text-sm">
+                <strong className="block text-xs text-amber-800 not-italic mb-2" style={{ fontFamily: 'Georgia, serif' }}>Tiểu sử / Ghi chú:</strong>
+                {m.bio}
+              </div>
+            )}
           </div>
 
           {/* Family Info */}

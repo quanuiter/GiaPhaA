@@ -260,6 +260,12 @@ export default function MembersPage() {
                       <span className="font-light text-amber-900 text-right">{m.occupation}</span>
                     </div>
                   )}
+                  {m.hometown && (
+                    <div className="flex justify-between">
+                      <span className="text-amber-700 font-light">Quê</span>
+                      <span className="font-light text-amber-900 text-right truncate ml-4">{m.hometown}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between pt-2 border-t border-amber-900 border-opacity-20">
                     <span className="text-amber-700 font-light">Trạng thái</span>
                     <span className={`text-xs px-2 py-1 rounded font-light ${m.isDeceased ? 'bg-amber-200 text-amber-900' : 'bg-amber-300 text-amber-900'}`}>
@@ -272,43 +278,61 @@ export default function MembersPage() {
           ))}
         </div>
       ) : (
-        // List View
-        <div className="space-y-2">
-          {members.map((m, i) => (
-            <Link key={m.id} to={`/members/${m.id}`} className="group">
-              <div className="bg-gradient-to-r from-amber-50 to-white rounded-lg border border-amber-900 border-opacity-20 p-4 hover:shadow-md transition-all hover:border-amber-900 hover:border-opacity-40 flex items-center justify-between">
-                <div className="flex items-center gap-4 flex-1">
-                  <span className="text-amber-700 font-light text-sm w-8">{i + 1}</span>
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-light flex-shrink-0 ${m.gender === 'male' ? 'bg-amber-300 text-amber-900' : 'bg-amber-200 text-amber-800'}`}>
-                    {m.avatarUrl ? (
-                      <img src={`http://localhost:3001${m.avatarUrl}`} className="w-full h-full object-cover rounded-full" alt="" />
-                    ) : m.fullName.split(' ').pop()[0]}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-light text-amber-950 group-hover:text-amber-900" style={{fontFamily: 'Georgia, serif'}}>{m.fullName}</p>
-                    {m.nickname && <p className="text-xs text-amber-700 font-light">{m.nickname}</p>}
-                  </div>
-                  <div className="flex gap-6 text-sm ml-4">
-                    <span className="text-amber-700 font-light">{m.gender === 'male' ? 'Nam' : 'Nữ'}</span>
-                    <span className="text-amber-700 font-light">Đời {m.generation}</span>
-                    {m.birthDate && <span className="text-amber-700 font-light">{new Date(m.birthDate).getFullYear()}</span>}
-                    {m.occupation && <span className="text-amber-700 font-light">{m.occupation}</span>}
-                  </div>
-                  <span className={`text-xs px-2 py-1 rounded font-light ${m.isDeceased ? 'bg-amber-200 text-amber-900' : 'bg-amber-300 text-amber-900'}`}>
-                    {m.isDeceased ? 'Đã mất' : 'Còn sống'}
-                  </span>
-                </div>
-                <div className="flex gap-2 ml-4">
-                  {(myRole === 'admin' || myRole === 'editor') && (
-                    <Link to={`/members/${m.id}/edit`} className="px-2 py-1 text-xs text-amber-900 hover:bg-amber-200 rounded transition" onClick={e => e.preventDefault()}>Sửa</Link>
-                  )}
-                  {myRole === 'admin' && (
-                    <button onClick={(e) => { e.preventDefault(); confirm(`Xóa "${m.fullName}"?`) && deleteMutation.mutate(m.id) }} className="px-2 py-1 text-xs text-amber-900 hover:bg-amber-200 rounded transition">Xóa</button>
-                  )}
-                </div>
-              </div>
-            </Link>
-          ))}
+        // List View (Table Format)
+        <div className="bg-white rounded-xl border border-amber-900 border-opacity-20 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-amber-50 border-b border-amber-200 text-amber-900 text-sm font-light" style={{fontFamily: 'Georgia, serif'}}>
+                  <th className="px-4 py-3 text-center">STT</th>
+                  <th className="px-4 py-3">Họ Tên</th>
+                  <th className="px-4 py-3 text-center">Giới tính</th>
+                  <th className="px-4 py-3 text-center">Đời</th>
+                  <th className="px-4 py-3">Ngày sinh</th>
+                  <th className="px-4 py-3">Quê quán</th>
+                  <th className="px-4 py-3 text-center">Trạng thái</th>
+                  <th className="px-4 py-3 text-center">Hành động</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-amber-100 text-sm text-amber-950 font-light">
+                {members.map((m, i) => (
+                  <tr key={m.id} className="hover:bg-amber-50 transition-colors group">
+                    <td className="px-4 py-3 text-center text-amber-700">{i + 1}</td>
+                    <td className="px-4 py-3">
+                      <Link to={`/members/${m.id}`} className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 ${m.gender === 'male' ? 'bg-amber-300 text-amber-900' : 'bg-amber-200 text-amber-800'}`}>
+                          {m.avatarUrl ? <img src={`http://localhost:3001${m.avatarUrl}`} className="w-full h-full object-cover rounded-full" alt="" /> : m.fullName.split(' ').pop()[0]}
+                        </div>
+                        <div>
+                          <span className="group-hover:text-amber-700 font-medium transition-colors">{m.fullName}</span>
+                          {m.nickname && <span className="block text-xs text-amber-600 italic">{m.nickname}</span>}
+                        </div>
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-center">{m.gender === 'male' ? 'Nam' : 'Nữ'}</td>
+                    <td className="px-4 py-3 text-center font-medium">Đời {m.generation}</td>
+                    <td className="px-4 py-3">{m.birthDate ? new Date(m.birthDate).toLocaleDateString('vi-VN') : '-'}</td>
+                    <td className="px-4 py-3 truncate max-w-[150px]">{m.hometown || '-'}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`text-xs px-2 py-1 rounded-full ${m.isDeceased ? 'bg-amber-200 text-amber-900' : 'bg-amber-300 text-amber-900'}`}>
+                        {m.isDeceased ? 'Đã mất' : 'Còn sống'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <div className="flex justify-center gap-2">
+                        {(myRole === 'admin' || myRole === 'editor') && (
+                          <Link to={`/members/${m.id}/edit`} className="text-amber-700 hover:text-amber-900 transition-colors">Sửa</Link>
+                        )}
+                        {myRole === 'admin' && (
+                          <button onClick={() => confirm(`Xóa "${m.fullName}"?`) && deleteMutation.mutate(m.id)} className="text-red-600 hover:text-red-800 transition-colors">Xóa</button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

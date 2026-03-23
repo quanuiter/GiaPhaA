@@ -48,6 +48,16 @@ export default function GearMenu({ menu, onAction, onClose, canEdit, isAdmin }) 
         )
         if (['edit','child','spouse'].includes(item.key) && !canEdit) return null
         if (item.key === 'delete' && !isAdmin) return null
+
+        // 1. Chặn hiển thị nút Thêm vợ/chồng nếu không có huyết thống
+        if (item.key === 'spouse' && !member.isBloodline) return null
+
+        // 2. Đổi tên nút động theo giới tính của thành viên
+        let btnLabel = item.label
+        if (item.key === 'spouse') {
+          btnLabel = member.gender === 'male' ? 'Thêm hôn thê' : 'Thêm hôn phu'
+        }
+
         return (
           <button
             key={item.key}
@@ -62,7 +72,7 @@ export default function GearMenu({ menu, onAction, onClose, canEdit, isAdmin }) 
             onMouseEnter={e => e.currentTarget.style.background = item.danger ? '#fed7aa' : '#fef3c7'}
             onMouseLeave={e => e.currentTarget.style.background = 'none'}
           >
-            {item.label}
+            {btnLabel}
           </button>
         )
       })}

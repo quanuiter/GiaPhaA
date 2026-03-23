@@ -104,6 +104,8 @@ export default function TreeSelectPage() {
     );
   }
 
+  const isSystemAdmin = user?.role === 'admin' || user?.username === 'admin';
+
   return (
     <div className="min-h-screen bg-[#fdfbf7] flex flex-col items-center pt-16 pb-10 px-4">
       <div className="absolute top-4 right-6 flex items-center gap-4">
@@ -199,7 +201,11 @@ export default function TreeSelectPage() {
             <h3 className="text-lg font-medium text-amber-950 mb-2" style={{ fontFamily: 'Georgia, serif' }}>Tạo gia phả mới</h3>
             <p className="text-sm text-amber-700 font-light mb-4">Trở thành Quản trị viên và bắt đầu xây dựng cây gia phả của bạn.</p>
             
-            {!showCreateForm ? (
+            {!isSystemAdmin ? (
+              <div className="p-4 bg-amber-50 text-amber-800 text-sm rounded border border-amber-200 text-center font-light">
+                Chỉ Quản trị viên hệ thống mới có quyền tạo cây gia phả mới.
+              </div>
+            ) : !showCreateForm ? (
               <button 
                 onClick={() => setShowCreateForm(true)}
                 className="w-full border-2 border-dashed border-amber-400 text-amber-700 px-4 py-2 hover:bg-amber-50 hover:border-amber-600 transition-colors"

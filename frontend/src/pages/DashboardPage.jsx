@@ -107,7 +107,10 @@ export default function DashboardPage() {
             {events.map(ev => (
               <div key={ev.id} className="p-3 bg-amber-200 bg-opacity-20 rounded-sm border border-amber-900 border-opacity-20">
                 <p className="font-light text-sm text-amber-950 truncate" style={{fontFamily: 'Georgia, serif'}}>{ev.name}</p>
-                <p className="text-xs text-amber-700 font-light mt-1">{new Date(ev.eventDate).toLocaleDateString('vi-VN')}</p>
+                <p className="text-xs text-amber-700 font-light mt-1">
+                  {new Date(ev.eventDate).toLocaleDateString('vi-VN')}
+                  {ev.lunarDate && ` (${ev.lunarDate} Âm lịch)`}
+                </p>
                 {ev.location && <p className="text-xs text-amber-700 font-light">• {ev.location}</p>}
               </div>
             ))}

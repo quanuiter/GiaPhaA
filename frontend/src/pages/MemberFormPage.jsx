@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../store/authStore'
 import { treeApi } from '../services/api'
 import toast from 'react-hot-toast'
+import { Solar } from 'lunar-javascript'
 
 const RELATION_TYPES = [
   { value: 'root',   label: 'Đời đầu (tổ)',  desc: 'Thành viên gốc, không có cha mẹ trong hệ thống' },
@@ -23,8 +24,9 @@ export default function MemberFormPage() {
   const [avatarFile,    setAvatarFile]    = useState(null)
   const [relationType,  setRelationType]  = useState('child')  // root | child | spouse
   const [form, setForm] = useState({
-    fullName: '', nickname: '', gender: 'male', birthDate: '',
-    birthPlace: '', occupation: '', hometown: '',
+    fullName: '', nickname: '', gender: 'male', birthDate: '', birthDateLunar: '',
+    birthPlace: '', occupation: '', hometown: '', address: '',
+    phone: '', email: '', bio: '',
     generation: 1, fatherId: '', motherId: '',
     // Thêm mới: spouse
     spouseId: '', marriageDate: '',
@@ -49,9 +51,14 @@ export default function MemberFormPage() {
       nickname:   member.nickname   ?? '',
       gender:     member.gender     ?? 'male',
       birthDate:  member.birthDate  ? member.birthDate.slice(0, 10) : '',
+      birthDateLunar: member.birthDateLunar ?? '',
       birthPlace: member.birthPlace ?? '',
       occupation: member.occupation ?? '',
       hometown:   member.hometown   ?? '',
+      address:    member.address    ?? '',
+      phone:      member.phone      ?? '',
+      email:      member.email      ?? '',
+      bio:        member.bio        ?? '',
       generation: member.generation ?? 1,
       fatherId:   member.fatherId   ?? '',
       motherId:   member.motherId   ?? '',
@@ -97,6 +104,24 @@ export default function MemberFormPage() {
     }
   }
 
+  const handleBirthDateChange = (e) => {
+    const val = e.target.value;
+    setForm(f => ({ ...f, birthDate: val }));
+    
+    if (val) {
+      try {
+        const [year, month, day] = val.split('-');
+        const solar = Solar.fromYmd(parseInt(year, 10), parseInt(month, 10), parseInt(day, 10));
+        const lunar = solar.getLunar();
+        const lDay = lunar.getDay().toString().padStart(2, '0');
+        const lMonth = lunar.getMonth().toString().padStart(2, '0');
+        setForm(f => ({ ...f, birthDateLunar: `${lDay}/${lMonth}/${lunar.getYear()}` }));
+      } catch (err) {}
+    } else {
+      setForm(f => ({ ...f, birthDateLunar: '' }));
+    }
+  }
+
   const handleSubmit = async e => {
     e.preventDefault()
     if (!form.fullName.trim())      return toast.error('Họ tên không được để trống')
@@ -119,9 +144,14 @@ export default function MemberFormPage() {
       fd.append('generation', form.generation)
       if (form.nickname)   fd.append('nickname',   form.nickname)
       if (form.birthDate)  fd.append('birthDate',  form.birthDate)
+      if (form.birthDateLunar) fd.append('birthDateLunar', form.birthDateLunar)
       if (form.birthPlace) fd.append('birthPlace', form.birthPlace)
       if (form.occupation) fd.append('occupation', form.occupation)
       if (form.hometown)   fd.append('hometown',   form.hometown)
+      if (form.address)    fd.append('address',    form.address)
+      if (form.phone)      fd.append('phone',      form.phone)
+      if (form.email)      fd.append('email',      form.email)
+      if (form.bio)        fd.append('bio',        form.bio)
       if (relationType === 'child' || isEdit) {
         if (form.fatherId) fd.append('fatherId', form.fatherId)
         if (form.motherId) fd.append('motherId', form.motherId)
@@ -263,7 +293,12 @@ export default function MemberFormPage() {
             <Field label="Ngày sinh">
               <input className="inp" type="date"
                 max={new Date().toISOString().slice(0, 10)}
-                value={form.birthDate} onChange={e => set('birthDate', e.target.value)}/>
+                value={form.birthDate} onChange={handleBirthDateChange}/>
+            </Field>
+
+            <Field label="Ngày sinh (Âm lịch)">
+              <input className="inp" placeholder="VD: 15/08/1990"
+                value={form.birthDateLunar} onChange={e => set('birthDateLunar', e.target.value)}/>
             </Field>
 
             <Field label="Đời thứ *">
@@ -286,6 +321,35 @@ export default function MemberFormPage() {
               <input className="inp" placeholder="Quê gốc..."
                 value={form.hometown} onChange={e => set('hometown', e.target.value)}/>
             </Field>
+          </div>
+        </div>
+
+        {/* Liên hệ và Khác */}
+        <div className="relative bg-gradient-to-b from-amber-100 to-amber-50 rounded-sm border-2 border-amber-900 border-opacity-20 shadow-lg p-6 space-y-4" style={{boxShadow: '0 8px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)'}}>
+          <div className="absolute top-2 left-2 w-4 h-4 border-t border-l border-amber-800 opacity-30"></div>
+          <h3 className="font-light text-amber-950 pb-3 border-b-2 border-amber-900 border-opacity-20" style={{fontFamily: 'Georgia, serif', letterSpacing: '0.08em'}}>Liên Hệ & Thông Tin Khác</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="Số điện thoại">
+              <input className="inp" placeholder="09xxxx..."
+                value={form.phone} onChange={e => set('phone', e.target.value)}/>
+            </Field>
+            
+            <Field label="Email">
+              <input className="inp" type="email" placeholder="email@..."
+                value={form.email} onChange={e => set('email', e.target.value)}/>
+            </Field>
+
+            <div className="md:col-span-2">
+              <Field label="Địa chỉ hiện tại">
+                <input className="inp" placeholder="Số nhà, đường, quận..." value={form.address} onChange={e => set('address', e.target.value)}/>
+              </Field>
+            </div>
+            
+            <div className="md:col-span-2">
+              <Field label="Tiểu sử / Ghi chú">
+                <textarea className="inp" rows="3" placeholder="Ghi chú về cuộc đời, sự nghiệp..." value={form.bio} onChange={e => set('bio', e.target.value)}></textarea>
+              </Field>
+            </div>
           </div>
         </div>
 

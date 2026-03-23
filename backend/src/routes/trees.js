@@ -57,6 +57,11 @@ router.get('/:id', auth(), async (req, res) => {
 // Tạo cây mới
 router.post('/', auth(), async (req, res) => {
   try {
+    // Kiểm tra quyền: Chỉ System Admin mới được tạo cây mới
+    if (req.user.role !== 'admin' && req.user.username !== 'admin') {
+      return res.status(403).json({ message: 'Chỉ Quản trị viên hệ thống mới có quyền tạo cây gia phả mới' })
+    }
+
     const { name, description } = req.body
     if (!name?.trim()) return res.status(400).json({ message: 'Tên cây không được để trống' })
     if (name.length > 200) return res.status(400).json({ message: 'Tên cây tối đa 200 ký tự' })

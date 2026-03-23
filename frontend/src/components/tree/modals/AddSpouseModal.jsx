@@ -25,6 +25,7 @@ export default function AddSpouseModal({ member, onClose }) {
 
   const isHusband   = member?.gender === 'male'
   const spouseLabel = isHusband ? 'vợ' : 'chồng'
+  const modalTitleSpouse = isHusband ? 'hôn thê' : 'hôn phu'
 
   const [isNew, setIsNew] = useState(true)
   const [spouseForm, setSpouseForm] = useState({
@@ -113,7 +114,7 @@ export default function AddSpouseModal({ member, onClose }) {
 
   return (
     <FloatModal
-      title={`Thêm hôn thê — ${member?.fullName}`}
+      title={`Thêm ${modalTitleSpouse} — ${member?.fullName}`}
       subtitle="Hệ thống sẽ kiểm tra huyết thống trước khi tạo"
       onClose={onClose} width={540}
     >
