@@ -16,7 +16,7 @@ exports.getAll = async (req, res) => {
     const members = await prisma.member.findMany({
       where,
       orderBy: [{ generation: 'asc' }, { fullName: 'asc' }],
-      include: { father: true, mother: true, death: true }
+      include: { father: true, mother: true, death: true, marriagesAsH: { include: { wife: true } }, marriagesAsW: { include: { husband: true } } }
     })
     res.json(members)
   } catch (err) { res.status(500).json({ message: err.message }) }

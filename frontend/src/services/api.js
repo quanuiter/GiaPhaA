@@ -58,7 +58,22 @@ export const treeApi = (treeId) => ({
   removeTreeUser: (userId)      => api.delete(`/trees/${treeId}/users/${userId}`),
   pendingRequests: () => api.get(`/trees/${treeId}/pending-requests`),
   approveRequest: (userId, data) => api.put(`/trees/${treeId}/requests/${userId}/approve`, data),
-  rejectRequest: (userId) => api.delete(`/trees/${treeId}/requests/${userId}/reject`)
+  rejectRequest: (userId) => api.delete(`/trees/${treeId}/requests/${userId}/reject`),
+
+  // Categories (QĐ10.1 - Danh mục tùy chỉnh)
+  categories:       (query = '')       => api.get(`/trees/${treeId}/categories${query}`),
+  categoryTypes:    ()                 => api.get(`/trees/${treeId}/categories/types`),
+  createCategory:   (data)             => api.post(`/trees/${treeId}/categories`, data),
+  initCategories:   (data = {})        => api.post(`/trees/${treeId}/categories/init`, data),
+  updateCategory:   (id, data)         => api.put(`/trees/${treeId}/categories/${id}`, data),
+  deleteCategory:   (id)               => api.delete(`/trees/${treeId}/categories/${id}`),
+
+  // Configs (QĐ10.2 - Tham số hệ thống)
+  configs:          ()                 => api.get(`/trees/${treeId}/configs`),
+  configSchema:     ()                 => api.get(`/trees/${treeId}/configs/schema`),
+  updateConfigs:    (data)             => api.put(`/trees/${treeId}/configs`, data),
+  updateConfig:     (key, data)        => api.put(`/trees/${treeId}/configs/${key}`, data),
+  resetConfigs:     (data = {})        => api.post(`/trees/${treeId}/configs/reset`, data),
 })
 
 export default api

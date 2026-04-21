@@ -20,6 +20,8 @@ app.use('/api/trees/:treeId/marriages',  require('./src/routes/marriages'))
 app.use('/api/trees/:treeId/events',     require('./src/routes/events'))
 app.use('/api/trees/:treeId/tree',       require('./src/routes/treeView'))
 app.use('/api/trees/:treeId/reports',    require('./src/routes/reports'))
+app.use('/api/trees/:treeId/categories', require('./src/routes/categories'))
+app.use('/api/trees/:treeId/configs',    require('./src/routes/configs'))
 // Achievements lồng trong members
 app.use('/api/trees/:treeId/members/:memberId/achievements', require('./src/routes/achievements'))
 

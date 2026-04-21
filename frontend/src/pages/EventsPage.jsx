@@ -85,6 +85,45 @@ export default function EventsPage() {
     }
   }
 
+  // ── Chỉnh sửa sự kiện (YC5 / QĐ5) ──
+  const [editingEvent, setEditingEvent] = useState(null)
+  const [editData, setEditData] = useState({})
+  const [updating, setUpdating] = useState(false)
+
+  const handleEditEvent = (ev) => {
+    setEditingEvent(ev.id)
+    setEditData({
+      name: ev.name || '',
+      eventDate: ev.eventDate ? new Date(ev.eventDate).toISOString().split('T')[0] : '',
+      location: ev.location || '',
+      note: ev.note || '',
+      type: ev.type,
+    })
+  }
+
+  const handleCancelEdit = () => {
+    setEditingEvent(null)
+    setEditData({})
+  }
+
+  const handleUpdateEvent = async (ev) => {
+    setUpdating(true)
+    try {
+      const payload = ev.type === 'anniversary'
+        ? { location: editData.location, note: editData.note }
+        : { name: editData.name, eventDate: editData.eventDate ? new Date(editData.eventDate).toISOString() : undefined, location: editData.location, note: editData.note }
+      await treeApi(treeId).updateEvent(ev.id, payload)
+      queryClient.invalidateQueries({ queryKey: ['events', treeId] })
+      queryClient.invalidateQueries({ queryKey: ['upcomingEvents', treeId] })
+      setEditingEvent(null)
+      setEditData({})
+    } catch (err) {
+      alert('Lỗi: ' + (err.response?.data?.message || err.message))
+    } finally {
+      setUpdating(false)
+    }
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -248,40 +287,122 @@ export default function EventsPage() {
                 </tr>
               </thead>
               <tbody>
-                {displayEvents.map((ev, idx) => (
-                  <tr key={ev.id} className={`border-b border-amber-200 ${idx % 2 === 0 ? 'bg-white' : 'bg-amber-50'} hover:bg-amber-100 transition-colors`}>
-                    <td className="px-4 py-3 text-sm text-amber-900 font-light" style={{fontFamily: 'Georgia, serif'}}>
-                      {new Date(ev.eventDate).toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' })}
-                      {ev.lunarDate && <div className="text-xs text-amber-700 mt-1">({ev.lunarDate} Âm lịch)</div>}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-amber-950 font-light" style={{fontFamily: 'Georgia, serif'}}>
-                      <span className="font-medium">{ev.name}</span>
-                      {ev.note && <p className="text-xs text-amber-700 italic mt-1">{ev.note}</p>}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-amber-800 font-light" style={{fontFamily: 'Georgia, serif'}}>
-                      {typeLabel[ev.type]}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-amber-800 font-light" style={{fontFamily: 'Georgia, serif'}}>
-                      {ev.location || '-'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-amber-800 font-light" style={{fontFamily: 'Georgia, serif'}}>
-                      {ev.relatedMember?.fullName || '-'}
-                    </td>
-                    {canEdit && (
-                      <td className="px-4 py-3 text-sm space-x-2">
-                        {ev.canDelete !== false && (
+                {displayEvents.map((ev, idx) => {
+                  const isEditing = editingEvent === ev.id
+                  const isAnniversary = ev.type === 'anniversary'
+
+                  if (isEditing) {
+                    return (
+                      <tr key={ev.id} className="border-b border-amber-200 bg-amber-100">
+                        <td className="px-4 py-3 text-sm" style={{fontFamily: 'Georgia, serif'}}>
+                          {isAnniversary ? (
+                            <span className="text-amber-900">{new Date(ev.eventDate).toLocaleDateString('vi-VN')}</span>
+                          ) : (
+                            <input
+                              type="date"
+                              value={editData.eventDate}
+                              onChange={(e) => setEditData({...editData, eventDate: e.target.value})}
+                              className="w-full px-2 py-1 border border-amber-300 rounded-sm text-sm focus:outline-none focus:border-amber-900"
+                            />
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm" style={{fontFamily: 'Georgia, serif'}}>
+                          {isAnniversary ? (
+                            <span className="text-amber-900 font-medium">{ev.name}</span>
+                          ) : (
+                            <input
+                              type="text"
+                              value={editData.name}
+                              onChange={(e) => setEditData({...editData, name: e.target.value})}
+                              className="w-full px-2 py-1 border border-amber-300 rounded-sm text-sm focus:outline-none focus:border-amber-900"
+                            />
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-amber-800 font-light" style={{fontFamily: 'Georgia, serif'}}>
+                          {typeLabel[ev.type]}
+                          {isAnniversary && <div className="text-xs text-amber-600 italic mt-1">Chỉ sửa địa điểm & ghi chú</div>}
+                        </td>
+                        <td className="px-4 py-3 text-sm" style={{fontFamily: 'Georgia, serif'}}>
+                          <input
+                            type="text"
+                            value={editData.location}
+                            onChange={(e) => setEditData({...editData, location: e.target.value})}
+                            placeholder="Địa điểm"
+                            className="w-full px-2 py-1 border border-amber-300 rounded-sm text-sm focus:outline-none focus:border-amber-900"
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-sm" style={{fontFamily: 'Georgia, serif'}}>
+                          <textarea
+                            value={editData.note}
+                            onChange={(e) => setEditData({...editData, note: e.target.value})}
+                            placeholder="Ghi chú"
+                            rows="2"
+                            className="w-full px-2 py-1 border border-amber-300 rounded-sm text-sm focus:outline-none focus:border-amber-900 resize-none"
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-sm space-y-1">
                           <button
-                            onClick={() => handleDeleteEvent(ev.id)}
-                            className="px-2 py-1 text-red-600 hover:bg-red-100 transition-colors text-xs border border-red-200 rounded-sm"
+                            onClick={() => handleUpdateEvent(ev)}
+                            disabled={updating}
+                            className="block w-full px-2 py-1 bg-green-700 text-white hover:bg-green-800 disabled:opacity-50 transition-colors text-xs rounded-sm"
                             style={{fontFamily: 'Georgia, serif'}}
                           >
-                            Xóa
+                            {updating ? '...' : 'Lưu'}
                           </button>
-                        )}
+                          <button
+                            onClick={handleCancelEdit}
+                            className="block w-full px-2 py-1 border border-amber-900 text-amber-900 hover:bg-amber-50 transition-colors text-xs rounded-sm"
+                            style={{fontFamily: 'Georgia, serif'}}
+                          >
+                            Hủy
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  }
+
+                  return (
+                    <tr key={ev.id} className={`border-b border-amber-200 ${idx % 2 === 0 ? 'bg-white' : 'bg-amber-50'} hover:bg-amber-100 transition-colors`}>
+                      <td className="px-4 py-3 text-sm text-amber-900 font-light" style={{fontFamily: 'Georgia, serif'}}>
+                        {new Date(ev.eventDate).toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                        {ev.lunarDate && <div className="text-xs text-amber-700 mt-1">({ev.lunarDate} Âm lịch)</div>}
                       </td>
-                    )}
-                  </tr>
-                ))}
+                      <td className="px-4 py-3 text-sm text-amber-950 font-light" style={{fontFamily: 'Georgia, serif'}}>
+                        <span className="font-medium">{ev.name}</span>
+                        {ev.note && <p className="text-xs text-amber-700 italic mt-1">{ev.note}</p>}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-amber-800 font-light" style={{fontFamily: 'Georgia, serif'}}>
+                        {typeLabel[ev.type]}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-amber-800 font-light" style={{fontFamily: 'Georgia, serif'}}>
+                        {ev.location || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-amber-800 font-light" style={{fontFamily: 'Georgia, serif'}}>
+                        {ev.relatedMember?.fullName || '-'}
+                      </td>
+                      {canEdit && (
+                        <td className="px-4 py-3 text-sm space-x-2">
+                          <button
+                            onClick={() => handleEditEvent(ev)}
+                            className="px-2 py-1 text-amber-900 hover:bg-amber-200 transition-colors text-xs border border-amber-300 rounded-sm"
+                            style={{fontFamily: 'Georgia, serif'}}
+                          >
+                            Sửa
+                          </button>
+                          {ev.canDelete !== false && (
+                            <button
+                              onClick={() => handleDeleteEvent(ev.id)}
+                              className="px-2 py-1 text-red-600 hover:bg-red-100 transition-colors text-xs border border-red-200 rounded-sm"
+                              style={{fontFamily: 'Georgia, serif'}}
+                            >
+                              Xóa
+                            </button>
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
             {displayEvents.length === 0 && (

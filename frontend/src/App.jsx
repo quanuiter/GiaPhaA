@@ -17,6 +17,7 @@ import EventsPage       from './pages/EventsPage'
 import ReportsPage      from './pages/ReportsPage'
 import AdminPage        from './pages/AdminPage'
 import ExportPage       from './pages/ExportPage'
+import SettingsPage     from './pages/SettingsPage'
 const qc = new QueryClient()
 
 export default function App() {
@@ -48,6 +49,7 @@ export default function App() {
                 <Route path="/export"    element={<ExportPage />} />
                 <Route path="/reports"   element={<ReportsPage />} />
                 <Route path="/admin"     element={<AdminPage />} />
+                <Route path="/settings"  element={<SettingsPage />} />
               </Route>
             </Route>
           </Route>
