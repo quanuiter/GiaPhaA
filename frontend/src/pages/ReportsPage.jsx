@@ -1,5 +1,5 @@
 // file: frontend/src/pages/ReportsPage.jsx
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { treeApi } from '../services/api'
 import { useAuthStore } from '../store/authStore'
@@ -165,6 +165,30 @@ function MemberReportTab({ api, treeId, filters, setFilters }) {
 // COMPONENT TAB 2: Thành tích
 // -------------------------------------------------------------
 function AchievementReportTab({ api, treeId, filters, setFilters }) {
+  // Lấy danh mục từ API (đồng bộ với Thay đổi quy định)
+  const { data: achTypeCats } = useQuery({
+    queryKey: ['categories', treeId, 'achievement_type'],
+    queryFn: () => api.categories('?type=achievement_type').then(r => r.data),
+    enabled: !!treeId,
+  })
+  const { data: achLevelCats } = useQuery({
+    queryKey: ['categories', treeId, 'achievement_level'],
+    queryFn: () => api.categories('?type=achievement_level').then(r => r.data),
+    enabled: !!treeId,
+  })
+
+  const typeLabels = useMemo(() => {
+    const map = {}
+    ;(achTypeCats || []).forEach(c => { map[c.value] = c.label })
+    return map
+  }, [achTypeCats])
+
+  const levelLabels = useMemo(() => {
+    const map = {}
+    ;(achLevelCats || []).forEach(c => { map[c.value] = c.label })
+    return map
+  }, [achLevelCats])
+
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['reports', 'achievements', treeId, filters],
     queryFn: () => {
@@ -220,14 +244,14 @@ function AchievementReportTab({ api, treeId, filters, setFilters }) {
                 <tr><td colSpan="6" className="p-5 text-gray-500">Không có thành tích nào trong khoảng thời gian này.</td></tr>
               ) : (
                 data.achievementStats.map((a, idx) => (
-                  <tr key={a.type} className="hover:bg-amber-50">
-                    <td className="p-3">{idx + 1}</td>
-                    <td className="p-3 font-semibold">{a.type}</td>
-                    <td className="p-3">{a.count}</td>
-                    <td className="p-3">{a.commonLevel}</td>
-                    <td className="p-3 font-medium text-amber-800">{a.topMember}</td>
-                    <td className="p-3 italic text-gray-500">—</td>
-                  </tr>
+                    <tr key={a.type} className="hover:bg-amber-50">
+                      <td className="p-3">{idx + 1}</td>
+                      <td className="p-3 font-semibold">{typeLabels[a.type] || a.type}</td>
+                      <td className="p-3">{a.count}</td>
+                      <td className="p-3">{levelLabels[a.commonLevel] || a.commonLevel}</td>
+                      <td className="p-3 font-medium text-amber-800">{a.topMember}</td>
+                      <td className="p-3 italic text-gray-500">—</td>
+                    </tr>
                 ))
               )}
             </tbody>

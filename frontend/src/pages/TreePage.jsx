@@ -8,7 +8,7 @@
  *  - Nhiều hôn nhân được hiển thị đầy đủ, ly hôn/góa dùng nét đứt.
  *  - Form đầy đủ BM1 + BM2.
  */
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import {
   ReactFlow, Controls, MiniMap,
   useNodesState, useEdgesState,
@@ -22,7 +22,7 @@ import toast from 'react-hot-toast'
 
 import { useAuthStore } from '../store/authStore'
 import { treeApi } from '../services/api'
-import { buildGraph, MARRIAGE_COLORS } from '../utils/treeLayout'
+import { buildGraph, MARRIAGE_COLORS, NODE_W, NODE_H, GEN_GAP } from '../utils/treeLayout'
 
 import MemberNode, { registerMenuSetter } from '../components/tree/MemberNode'
 import GearMenu from '../components/tree/GearMenu'
@@ -49,18 +49,18 @@ function GenerationOverlay() {
   const nodes = useNodes()
 
   if (!nodes.length) return null
-  const maxGen = Math.max(...nodes.map(n => n.data.generation || 1))
+  const gens = nodes.map(n => n.data.generation || 1)
+  const minGen = Math.min(...gens)
+  const maxGen = Math.max(...gens)
   if (maxGen <= 0) return null
 
   const xs = nodes.map(n => n.position.x)
   const minX = Math.min(...xs) - 1000
   const maxX = Math.max(...xs) + 1000
-  const NODE_H = 180
-  const GEN_GAP = 100
 
   const lines = []
-  for (let i = 1; i <= maxGen; i++) {
-    const lineY = (i - 1) * (NODE_H + GEN_GAP) + NODE_H / 2
+  for (let i = minGen; i <= maxGen; i++) {
+    const lineY = (i - minGen) * (NODE_H + GEN_GAP) + NODE_H / 2
     lines.push(
       <g key={i}>
         <line x1={minX} y1={lineY} x2={maxX} y2={lineY} stroke="#b45309" strokeWidth="2" strokeDasharray="6 6" opacity="0.15" />
@@ -80,10 +80,10 @@ function GenerationOverlay() {
 // ══════════════════════════════════════════════════════════════
 //  FamilyFlow — bên trong ReactFlowProvider
 // ══════════════════════════════════════════════════════════════
-export function FamilyFlow({ data, edgeType, hideSpouses }) {
+export function FamilyFlow({ data, edgeType, hideSpouses, focusMemberId }) {
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
-  const { fitView } = useReactFlow()
+  const { fitView, setCenter, getNodes } = useReactFlow()
 
   useEffect(() => {
     if (!data?.members?.length) return
@@ -92,6 +92,19 @@ export function FamilyFlow({ data, edgeType, hideSpouses }) {
     setEdges(g.edges)
     setTimeout(() => fitView({ padding: 0.12, duration: 500 }), 120)
   }, [data, edgeType, hideSpouses])
+
+  // Focus on searched member
+  useEffect(() => {
+    if (!focusMemberId) return
+    const timer = setTimeout(() => {
+      const allNodes = getNodes()
+      const n = allNodes.find(nd => nd.id === `m-${focusMemberId}`)
+      if (n) {
+        setCenter(n.position.x + NODE_W / 2, n.position.y + NODE_H / 2, { zoom: 1.5, duration: 500 })
+      }
+    }, 350)
+    return () => clearTimeout(timer)
+  }, [focusMemberId])
 
   return (
     <ReactFlow
@@ -133,6 +146,11 @@ export default function TreePage() {
 
   const [edgeType, setEdgeType] = useState('default')
   const [hideSpouses, setHideSpouses] = useState(false)
+  const [genFrom, setGenFrom] = useState(null)
+  const [genTo, setGenTo] = useState(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [focusMemberId, setFocusMemberId] = useState(null)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [menu, setMenu] = useState(null)
   const [modal, setModal] = useState(null)
 
@@ -178,8 +196,43 @@ export default function TreePage() {
     </div>
   )
 
-  const memberCount = data?.members?.length ?? 0
-  const marriageCount = data?.marriages?.length ?? 0
+  const totalMemberCount = data?.members?.length ?? 0
+  const maxGen = totalMemberCount
+    ? Math.max(...data.members.map(m => m.generation))
+    : 0
+  const genOptions = Array.from({ length: maxGen }, (_, i) => i + 1)
+
+  const filteredData = useMemo(() => {
+    if (!data?.members) return data
+    const from = genFrom ?? 1
+    const to = genTo ?? (maxGen || 999)
+    const members = data.members.filter(m => m.generation >= from && m.generation <= to)
+    const ids = new Set(members.map(m => m.id))
+    const marriages = (data.marriages ?? []).filter(mar => ids.has(mar.husbandId) && ids.has(mar.wifeId))
+    return { ...data, members, marriages }
+  }, [data, genFrom, genTo, maxGen])
+
+  const memberCount = filteredData?.members?.length ?? 0
+  const marriageCount = filteredData?.marriages?.length ?? 0
+
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim() || !data?.members) return []
+    const q = searchQuery.toLowerCase().trim()
+    return data.members.filter(m => m.fullName.toLowerCase().includes(q)).slice(0, 8)
+  }, [searchQuery, data])
+
+  const handleSearchSelect = (member) => {
+    const from = genFrom ?? 1
+    const to = genTo ?? (maxGen || 999)
+    if (member.generation < from || member.generation > to) {
+      setGenFrom(null)
+      setGenTo(null)
+    }
+    setFocusMemberId(null)
+    setTimeout(() => setFocusMemberId(member.id), 50)
+    setSearchOpen(false)
+    setSearchQuery(member.fullName)
+  }
 
   return (
     <div style={{
@@ -203,6 +256,48 @@ export default function TreePage() {
             {memberCount} thành viên · {marriageCount} hôn nhân
           </span>
         )}
+        {!isLoading && totalMemberCount > 0 && (
+          <div style={{ position: 'relative', marginLeft: 4 }}>
+            <input
+              type="text"
+              placeholder="🔍 Tìm thành viên..."
+              value={searchQuery}
+              onChange={e => { setSearchQuery(e.target.value); setSearchOpen(true); setFocusMemberId(null) }}
+              onFocus={() => searchQuery && setSearchOpen(true)}
+              onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
+              style={{
+                border: '1px solid #d4c9b8', borderRadius: 8, padding: '5px 10px',
+                fontSize: 12, color: '#78350f', background: '#fff',
+                outline: 'none', width: 180,
+              }}
+            />
+            {searchOpen && searchResults.length > 0 && (
+              <div style={{
+                position: 'absolute', top: '100%', left: 0, marginTop: 4,
+                background: '#fff', border: '1px solid #d4c9b8', borderRadius: 8,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 50,
+                maxHeight: 240, overflowY: 'auto', minWidth: 260,
+              }}>
+                {searchResults.map(m => (
+                  <div
+                    key={m.id}
+                    onMouseDown={() => handleSearchSelect(m)}
+                    style={{
+                      padding: '8px 12px', cursor: 'pointer', fontSize: 12,
+                      color: '#78350f', borderBottom: '1px solid #f3efe8',
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#fef3c7'}
+                    onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+                  >
+                    <span style={{ fontWeight: 500 }}>{m.fullName}</span>
+                    <span style={{ fontSize: 10, color: '#a16207', marginLeft: 12 }}>Đời {m.generation}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Combobox đường nối con cái */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginLeft: 'auto' }}>
@@ -222,6 +317,44 @@ export default function TreePage() {
             <input type="checkbox" checked={hideSpouses} onChange={e => setHideSpouses(e.target.checked)} />
             Ẩn hôn phối
           </label>
+          {maxGen > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <label style={{ fontSize: 12, color: '#8b5a2b', whiteSpace: 'nowrap' }}>Đời:</label>
+              <select
+                value={genFrom ?? ''}
+                onChange={e => {
+                  const v = e.target.value ? +e.target.value : null
+                  setGenFrom(v)
+                  if (v && genTo && v > genTo) setGenTo(v)
+                }}
+                style={{
+                  border: '1px solid #d4c9b8', borderRadius: 8, padding: '5px 8px',
+                  fontSize: 12, color: '#78350f', background: '#fef3c7',
+                  cursor: 'pointer', outline: 'none', minWidth: 70,
+                }}
+              >
+                <option value="">Từ đầu</option>
+                {genOptions.map(g => <option key={g} value={g}>Đời {g}</option>)}
+              </select>
+              <span style={{ fontSize: 12, color: '#8b5a2b' }}>→</span>
+              <select
+                value={genTo ?? ''}
+                onChange={e => {
+                  const v = e.target.value ? +e.target.value : null
+                  setGenTo(v)
+                  if (v && genFrom && v < genFrom) setGenFrom(v)
+                }}
+                style={{
+                  border: '1px solid #d4c9b8', borderRadius: 8, padding: '5px 8px',
+                  fontSize: 12, color: '#78350f', background: '#fef3c7',
+                  cursor: 'pointer', outline: 'none', minWidth: 70,
+                }}
+              >
+                <option value="">Cuối</option>
+                {genOptions.map(g => <option key={g} value={g}>Đời {g}</option>)}
+              </select>
+            </div>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <label style={{ fontSize: 12, color: '#8b5a2b', whiteSpace: 'nowrap' }}>
               Đường nối:
@@ -237,28 +370,28 @@ export default function TreePage() {
         </div>
 
         {/* Legend */}
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
           {[
-            { shape: 'rect', color: '#fcd34d', bg: '#fcd34d', label: 'Nam' },
-            { shape: 'rect', color: '#fef3c7', bg: '#fef3c7', label: 'Nữ' },
-            { shape: 'rect', color: '#b89968', bg: '#dcc9b6', label: 'Đã mất' },
+            { shape: 'rect', color: '#b45309', bg: '#fcd34d', label: 'Huyết thống' },
+            { shape: 'rect', color: '#b45309', bg: '#fef3c7', label: 'Dâu / Rể' },
+            { shape: 'rect', color: '#6b7280', bg: '#d1d5db', label: 'Đã mất' },
             { shape: 'line', color: MARRIAGE_COLORS.living.stroke, dash: false, label: 'Sống chung' },
             { shape: 'line', color: MARRIAGE_COLORS.divorced.stroke, dash: true, label: 'Ly hôn' },
             { shape: 'line', color: MARRIAGE_COLORS.widowed.stroke, dash: true, label: 'Góa' },
-            { shape: 'line', color: '#c8b5a0', dash: true, label: 'Mẹ → Con' },
+            { shape: 'line', color: '#9ca3af', dash: true, label: 'Mẹ → Con' },
           ].map(({ shape, color, bg, label, dash }) => (
             <div key={label} style={{
-              display: 'flex', alignItems: 'center', gap: 4,
-              fontSize: 10.5, color: '#8b5a2b'
+              display: 'flex', alignItems: 'center', gap: 5,
+              fontSize: 11, color: '#8b5a2b', fontWeight: 500,
             }}>
               {shape === 'rect'
                 ? <div style={{
-                  width: 11, height: 11, borderRadius: 2, background: bg,
-                  border: `2px solid ${color}`
+                  width: 14, height: 14, borderRadius: 3, background: bg,
+                  border: `2.5px solid ${color}`
                 }} />
-                : <svg width="22" height="8">
-                  <line x1="1" y1="4" x2="21" y2="4"
-                    stroke={color} strokeWidth="2"
+                : <svg width="24" height="8">
+                  <line x1="0" y1="4" x2="24" y2="4"
+                    stroke={color} strokeWidth="2.5"
                     strokeDasharray={dash ? '5 3' : undefined} />
                 </svg>
               }
@@ -294,7 +427,7 @@ export default function TreePage() {
             <p style={{ color: '#b45309', fontSize: 14 }}>Lỗi tải phả đồ</p>
           </div>
         )}
-        {!isLoading && !error && memberCount === 0 && (
+        {!isLoading && !error && totalMemberCount === 0 && (
           <div style={{
             position: 'absolute', inset: 0, background: '#faf6f0',
             display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -304,9 +437,27 @@ export default function TreePage() {
             <p style={{ color: '#8b5a2b', fontSize: 16, fontWeight: 600 }}>Chưa có thành viên</p>
           </div>
         )}
+        {!isLoading && !error && totalMemberCount > 0 && memberCount === 0 && (
+          <div style={{
+            position: 'absolute', inset: 0, background: '#faf6f0',
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            justifyContent: 'center', gap: 12
+          }}>
+            <span style={{ fontSize: 48 }}>🔍</span>
+            <p style={{ color: '#8b5a2b', fontSize: 14 }}>Không có thành viên trong khoảng đời đã chọn</p>
+            <button
+              onClick={() => { setGenFrom(null); setGenTo(null) }}
+              style={{
+                border: '1px solid #d4c9b8', borderRadius: 8, padding: '5px 14px',
+                fontSize: 12, color: '#b45309', background: '#fef3c7',
+                cursor: 'pointer', outline: 'none', fontWeight: 600,
+              }}
+            >Xem tất cả</button>
+          </div>
+        )}
         {!isLoading && memberCount > 0 && (
           <ReactFlowProvider>
-            <FamilyFlow data={data} edgeType={edgeType} hideSpouses={hideSpouses} />
+            <FamilyFlow data={filteredData} edgeType={edgeType} hideSpouses={hideSpouses} focusMemberId={focusMemberId} />
           </ReactFlowProvider>
         )}
       </div>

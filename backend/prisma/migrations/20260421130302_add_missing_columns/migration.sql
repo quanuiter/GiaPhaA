@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE `member` ADD COLUMN `address` VARCHAR(300) NULL,
+    ADD COLUMN `bio` TEXT NULL,
+    ADD COLUMN `birthDateLunar` VARCHAR(50) NULL,
+    ADD COLUMN `email` VARCHAR(100) NULL,
+    ADD COLUMN `isAdopted` BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN `phone` VARCHAR(20) NULL;
