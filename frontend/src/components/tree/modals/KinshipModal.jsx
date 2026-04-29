@@ -128,12 +128,109 @@ export default function KinshipModal({ data, onClose }) {
     setResult(null);
   }
 
+  // Hàm nội bộ tính xưng hô cho đường đi THUẦN HUYẾT (không có cạnh spouse)
+  const guessTitleBlood = (path, callerIdOverride, targetIdOverride) => {
+    const callerId = callerIdOverride || +personA;
+    const targetId = targetIdOverride || +personB;
+    const a = memberById[callerId];
+    const b = memberById[targetId];
+    const genderB = b?.gender;
+    const getYear = (m) => m?.birthDate ? new Date(m.birthDate).getFullYear() : 0;
+
+    if (!path || path.length === 0) return "Bản thân";
+    const up = path.filter(p => p.relType === 'parent').length;
+    const down = path.filter(p => p.relType === 'child').length;
+
+    if (up > 4 || down > 4) return null; // fallback
+
+    // 1. Trực hệ đi lên (Tổ tiên)
+    if (up > 0 && down === 0) {
+      if (up === 1) return genderB === 'male' ? 'Cha' : 'Mẹ';
+      if (up === 2) {
+        const parentOfCaller = memberById[path[0].to];
+        if (parentOfCaller.gender === 'male') return genderB === 'male' ? 'Ông nội' : 'Bà nội';
+        return genderB === 'male' ? 'Ông ngoại' : 'Bà ngoại';
+      }
+      if (up === 3) {
+        const parentOfCaller = memberById[path[0].to];
+        if (parentOfCaller.gender === 'male') return genderB === 'male' ? 'Ông cố nội (Cụ nội)' : 'Bà cố nội (Cụ nội)';
+        return genderB === 'male' ? 'Ông cố ngoại (Cụ ngoại)' : 'Bà cố ngoại (Cụ ngoại)';
+      }
+      if (up === 4) return genderB === 'male' ? 'Kỵ ông' : 'Kỵ bà';
+    }
+
+    // 2. Trực hệ đi xuống (Hậu duệ)
+    if (down > 0 && up === 0) {
+      if (down === 1) return genderB === 'male' ? 'Con trai' : 'Con gái';
+      if (down === 2) {
+        const childOfCaller = memberById[path[0].to];
+        if (childOfCaller.gender === 'male') return genderB === 'male' ? 'Cháu nội (Nam / Đích tôn)' : 'Cháu nội (Nữ)';
+        return genderB === 'male' ? 'Cháu ngoại (Nam)' : 'Cháu ngoại (Nữ)';
+      }
+      if (down === 3) return 'Chắt';
+      if (down === 4) return 'Chút';
+    }
+
+    // 3. Anh chị em ruột
+    if (up === 1 && down === 1) {
+      const yA = getYear(a), yB = getYear(b);
+      if (yA && yB && yA !== yB) return yB < yA ? (genderB === 'male' ? 'Anh ruột' : 'Chị ruột') : (genderB === 'male' ? 'Em trai ruột' : 'Em gái ruột');
+      return genderB === 'male' ? 'Anh/Em trai ruột' : 'Chị/Em gái ruột';
+    }
+
+    // 4. Bác, Chú, Cô, Cậu, Dì
+    if (up === 2 && down === 1) {
+      const pCaller = memberById[path[0].to];
+      const isPaternal = pCaller.gender === 'male';
+      const isBOlder = (getYear(pCaller) && getYear(b)) ? (getYear(b) < getYear(pCaller)) : false;
+      if (isPaternal) {
+        if (b.gender === 'male') return isBOlder ? 'Bác (bác trai)' : 'Chú';
+        return isBOlder ? 'Bác gái' : 'Cô';
+      } else {
+        if (b.gender === 'male') return 'Cậu';
+        return 'Dì';
+      }
+    }
+
+    if (up === 1 && down === 2) return 'Cháu';
+
+    // 5. Anh chị em họ
+    if (up === 2 && down === 2) {
+      const pA = memberById[path[0].to], pB = memberById[path[path.length - 2].to];
+      let isParentBOlder = null;
+      if (getYear(pA) && getYear(pB)) isParentBOlder = getYear(pB) < getYear(pA);
+      else if (getYear(a) && getYear(b)) isParentBOlder = getYear(b) < getYear(a);
+
+      if (isParentBOlder !== null) return isParentBOlder ? (genderB === 'male' ? 'Anh họ' : 'Chị họ') : (genderB === 'male' ? 'Em họ (nam)' : 'Em họ (nữ)');
+      return genderB === 'male' ? 'Anh/Em họ' : 'Chị/Em họ';
+    }
+
+    // 6. Ông/bà họ (Anh chị em của ông bà)
+    if (up === 3 && down === 1) {
+      const pCaller = memberById[path[0].to], gp = memberById[path[1].to];
+      const isBOlder = (getYear(b) && getYear(gp)) ? getYear(b) < getYear(gp) : false;
+      if (b.gender === 'male') return isBOlder ? 'Ông bác' : 'Ông chú';
+      return isBOlder ? 'Bà bác' : (gp.gender === 'male' ? 'Bà cô' : 'Bà dì');
+    }
+
+    if (up === 1 && down === 3) return 'Cháu (gọi bằng ông/bà)';
+
+    // 7. Quan hệ xa hơn
+    if (up > 0 && down > 0) {
+      if (up === down) return 'Anh/Chị/Em họ xa (cùng đời)';
+      if (up > down) return genderB === 'male' ? `Bề trên nam (cách ${up - down} đời)` : `Bề trên nữ (cách ${up - down} đời)`;
+      return 'Cháu';
+    }
+
+    return null; // không xác định được
+  }
+
   const guessTitle = (path) => {
     if (!path || path.length === 0) return "Bản thân";
     const up = path.filter(p => p.relType === 'parent').length;
     const down = path.filter(p => p.relType === 'child').length;
     const sp = path.filter(p => p.relType === 'spouse').length;
-    
+
     if (up > 4 || down > 4) return "Khó xác định (Quá 5 đời)";
     if (sp > 1) return "Khó xác định (Thông qua nhiều hôn nhân)";
 
@@ -143,48 +240,37 @@ export default function KinshipModal({ data, onClose }) {
 
     // Tiện ích lấy năm sinh so sánh lớn/nhỏ
     const getYear = (m) => m?.birthDate ? new Date(m.birthDate).getFullYear() : 0;
-    
-    // 1. Trực hệ đi lên (Tổ tiên)
-    if (up > 0 && down === 0 && sp === 0) {
-       if (up === 1) return genderB === 'male' ? 'Cha' : 'Mẹ';
-       if (up === 2) {
-         const parentOfA = memberById[path[0].to];
-         if (parentOfA.gender === 'male') return genderB === 'male' ? 'Ông nội' : 'Bà nội';
-         return genderB === 'male' ? 'Ông ngoại' : 'Bà ngoại';
-       }
-       if (up === 3) {
-         const parentOfA = memberById[path[0].to];
-         if (parentOfA.gender === 'male') return genderB === 'male' ? 'Ông cố nội (Cụ nội)' : 'Bà cố nội (Cụ nội)';
-         return genderB === 'male' ? 'Ông cố ngoại (Cụ ngoại)' : 'Bà cố ngoại (Cụ ngoại)';
-       }
-       if (up === 4) return genderB === 'male' ? 'Kỵ ông' : 'Kỵ bà';
+
+    // ── TRƯỜNG HỢP KHÔNG CÓ SPOUSE ──
+    if (sp === 0) {
+      const bloodResult = guessTitleBlood(path, +personA, +personB);
+      if (bloodResult) return bloodResult;
+
+      // Fallback chung
+      const genA = a?.generation || 1;
+      const genB = b?.generation || 1;
+      if (genB > genA) return 'Cháu';
+      return "Khó xác định (Quá phức tạp)";
     }
 
-    // 2. Trực hệ đi xuống (Hậu duệ)
-    if (down > 0 && up === 0 && sp === 0) {
-       if (down === 1) return genderB === 'male' ? 'Con trai' : 'Con gái';
-       if (down === 2) {
-         const childOfA = memberById[path[0].to];
-         if (childOfA.gender === 'male') return genderB === 'male' ? 'Cháu nội (Nam / Đích tôn)' : 'Cháu nội (Nữ)';
-         return genderB === 'male' ? 'Cháu ngoại (Nam)' : 'Cháu ngoại (Nữ)';
-       }
-       if (down === 3) return 'Chắt';
-       if (down === 4) return 'Chút';
-    }
-    
-    // 3. Vợ chồng
+    // ── VỢ CHỒNG (sp=1, chỉ 1 bước) ──
     if (sp === 1 && up === 0 && down === 0) return genderB === 'male' ? 'Chồng' : 'Vợ';
 
-    // 4. Các mối quan hệ thông qua 1 lần Hôn nhân (sp=1)
+    // ── TRƯỜNG HỢP CÓ 1 LẦN HÔN NHÂN (sp=1) ──
     if (sp === 1) {
+      // --- Trường hợp cụ thể đã biết trước ---
+
+      // Cha/mẹ vợ (chồng), cha dượng/mẹ kế
       if (up === 1 && down === 0) {
         if (path[0].relType === 'spouse') return genderB === 'male' ? 'Cha vợ/chồng' : 'Mẹ vợ/chồng';
         if (path[0].relType === 'parent') return genderB === 'male' ? 'Dượng (Cha dượng)' : 'Mẹ kế';
       }
+      // Con riêng, con rể/con dâu
       if (up === 0 && down === 1) {
         if (path[0].relType === 'spouse') return genderB === 'male' ? 'Con riêng của vợ/chồng (Nam)' : 'Con riêng của vợ/chồng (Nữ)';
         if (path[0].relType === 'child') return genderB === 'male' ? 'Con rể' : 'Con dâu';
       }
+      // Anh/chị/em vợ (chồng), anh rể/chị dâu/em rể/em dâu
       if (up === 1 && down === 1) {
         if (path[0].relType === 'spouse') {
           const aSpouse = memberById[path[0].to];
@@ -206,7 +292,7 @@ export default function KinshipModal({ data, onClose }) {
         const parentB = memberById[path[2].to];
         const isPaternal = parentA.gender === 'male';
         const isParentBOlder = (getYear(parentB) && getYear(parentA)) ? getYear(parentB) < getYear(parentA) : false;
-        
+
         if (isPaternal) {
           if (parentB.gender === 'male') {
             return isParentBOlder ? 'Bác gái (vợ bác trai)' : 'Thím (vợ chú)';
@@ -218,60 +304,33 @@ export default function KinshipModal({ data, onClose }) {
           return 'Dượng (chồng dì)';
         }
       }
-    }
-    
-    // 5. Anh chị em ruột
-    if (up === 1 && down === 1 && sp === 0) {
-       const yA = getYear(a), yB = getYear(b);
-       if (yA && yB && yA !== yB) return yB < yA ? (genderB === 'male' ? 'Anh ruột' : 'Chị ruột') : (genderB === 'male' ? 'Em trai ruột' : 'Em gái ruột');
-       return genderB === 'male' ? 'Anh/Em trai ruột' : 'Chị/Em gái ruột';
-    }
-    
-    // 6. Bác, Chú, Cô, Cậu, Dì
-    if (up === 2 && down === 1 && sp === 0) {
-       const pA = memberById[path[0].to];
-       const isPaternal = pA.gender === 'male';
-       const isBOlder = (getYear(pA) && getYear(b)) ? (getYear(b) < getYear(pA)) : false;
-       if (isPaternal) {
-         if (b.gender === 'male') return isBOlder ? 'Bác (bác trai)' : 'Chú';
-         return isBOlder ? 'Bác gái' : 'Cô';
-       } else {
-         if (b.gender === 'male') return 'Cậu';
-         return 'Dì';
-       }
-    }
-    
-    if (up === 1 && down === 2 && sp === 0) return 'Cháu';
-    
-    // 7. Anh chị em họ
-    if (up === 2 && down === 2 && sp === 0) {
-       const pA = memberById[path[0].to], pB = memberById[path[path.length - 2].to];
-       let isParentBOlder = null;
-       if (getYear(pA) && getYear(pB)) isParentBOlder = getYear(pB) < getYear(pA);
-       else if (getYear(a) && getYear(b)) isParentBOlder = getYear(b) < getYear(a);
 
-       if (isParentBOlder !== null) return isParentBOlder ? (genderB === 'male' ? 'Anh họ' : 'Chị họ') : (genderB === 'male' ? 'Em họ (nam)' : 'Em họ (nữ)');
-       return genderB === 'male' ? 'Anh/Em họ' : 'Chị/Em họ';
+      // --- TỔNG QUÁT: Hôn phối gọi người trong họ giống vợ/chồng mình gọi ---
+      // Nếu path bắt đầu bằng spouse → A là người ngoài, lấy phần huyết thống của vợ/chồng
+      if (path[0].relType === 'spouse') {
+        const spouseId = path[0].to;
+        const bloodPath = path.slice(1); // Bỏ cạnh spouse đầu tiên
+        if (bloodPath.length > 0) {
+          const spouseTitle = guessTitleBlood(bloodPath, spouseId, +personB);
+          if (spouseTitle) return spouseTitle;
+        }
+      }
+
+      // Nếu path kết thúc bằng spouse → B là người ngoài (vợ/chồng của người trong họ)
+      if (path[path.length - 1].relType === 'spouse') {
+        const bloodRelativeId = path[path.length - 1].from;
+        const bloodPath = path.slice(0, -1); // Bỏ cạnh spouse cuối cùng
+        if (bloodPath.length > 0) {
+          const bloodTitle = guessTitleBlood(bloodPath, +personA, bloodRelativeId);
+          if (bloodTitle) {
+            // B là vợ/chồng của người mà A gọi bằng [bloodTitle]
+            return `${genderB === 'male' ? 'Chồng' : 'Vợ'} của ${bloodTitle}`;
+          }
+        }
+      }
     }
 
-    // 8. Ông/bà họ (Anh chị em của ông bà)
-    if (up === 3 && down === 1 && sp === 0) {
-      const pA = memberById[path[0].to], gp = memberById[path[1].to];
-      const isBOlder = (getYear(b) && getYear(gp)) ? getYear(b) < getYear(gp) : false;
-      if (b.gender === 'male') return isBOlder ? 'Ông bác' : 'Ông chú';
-      return isBOlder ? 'Bà bác' : (gp.gender === 'male' ? 'Bà cô' : 'Bà dì');
-    }
-
-    if (up === 1 && down === 3 && sp === 0) return 'Cháu (gọi bằng ông/bà)';
-
-    // 9. Quan hệ xa hơn
-    if (up > 0 && down > 0 && sp === 0) {
-       if (up === down) return 'Anh/Chị/Em họ xa (cùng đời)';
-       if (up > down) return genderB === 'male' ? `Bề trên nam (cách ${up - down} đời)` : `Bề trên nữ (cách ${up - down} đời)`;
-       return 'Cháu';
-    }
-
-    // 10. Fallback chung cho tất cả các trường hợp vai vế nhỏ hơn (bề dưới)
+    // Fallback
     const genA = a?.generation || 1;
     const genB = b?.generation || 1;
     if (genB > genA) return 'Cháu';
@@ -308,7 +367,7 @@ export default function KinshipModal({ data, onClose }) {
 
   const renderTree = () => {
     if (!result || !result.path) return null;
-    
+
     const sequence = [+personA, ...result.path.map(p => p.to)];
     const gens = sequence.map(id => memberById[id]?.generation || 1);
     const minGen = Math.min(...gens);
@@ -338,7 +397,7 @@ export default function KinshipModal({ data, onClose }) {
           {result.path.map((step, i) => {
             const p1 = points[i];
             const p2 = points[i + 1];
-            
+
             const toMember = memberById[step.to];
             let label = '';
             if (step.relType === 'parent') label = toMember?.gender === 'male' ? 'Cha' : 'Mẹ';
@@ -408,12 +467,12 @@ export default function KinshipModal({ data, onClose }) {
       <Section>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <Field label="Người thứ 1 (Người gọi)" required>
-            <SearchSelect value={personA} onChange={v => {setPersonA(v); setResult(null)}} options={memberOptions} placeholder="Nhập để tìm kiếm..." />
+            <SearchSelect value={personA} onChange={v => { setPersonA(v); setResult(null) }} options={memberOptions} placeholder="Nhập để tìm kiếm..." />
           </Field>
-          
+
           <div style={{ display: 'flex', justifyContent: 'center', margin: '-4px 0' }}>
-            <button 
-              onClick={handleSwap} 
+            <button
+              onClick={handleSwap}
               style={{ padding: '6px 12px', background: '#fef3c7', border: '1px solid #d4c9b8', borderRadius: 20, cursor: 'pointer', color: '#b45309', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, zIndex: 2 }}
               title="Hoán đổi"
             >
@@ -423,7 +482,7 @@ export default function KinshipModal({ data, onClose }) {
           </div>
 
           <Field label="Người thứ 2 (Người được gọi)" required>
-            <SearchSelect value={personB} onChange={v => {setPersonB(v); setResult(null)}} options={memberOptions} placeholder="Nhập để tìm kiếm..." />
+            <SearchSelect value={personB} onChange={v => { setPersonB(v); setResult(null) }} options={memberOptions} placeholder="Nhập để tìm kiếm..." />
           </Field>
           <button onClick={handleCalculate} disabled={!personA || !personB} style={{ background: '#b45309', color: '#fff', border: 'none', padding: '10px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, marginTop: 8, opacity: (!personA || !personB) ? 0.5 : 1 }}>Tra Cứu</button>
         </div>
