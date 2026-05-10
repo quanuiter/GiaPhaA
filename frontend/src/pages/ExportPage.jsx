@@ -22,6 +22,34 @@ const PDF_PADDING = 80
 const HEADER_HEIGHT = 140
 const LEGEND_HEIGHT = 90
 const FOOTER_HEIGHT = 60
+const FIXED_SECTION_WIDTH = 800 // Kích thước cố định cho header/legend/footer
+
+// ══════════════════════════════════════════════════════════════
+//  Avatar → Base64 conversion
+// ══════════════════════════════════════════════════════════════
+async function loadAvatarsAsBase64(members) {
+  const avatarMap = {}
+  const promises = members
+    .filter(m => m.avatarUrl)
+    .map(async (m) => {
+      try {
+        const url = `http://localhost:3001${m.avatarUrl}`
+        const resp = await fetch(url)
+        if (!resp.ok) return
+        const blob = await resp.blob()
+        const dataUrl = await new Promise((resolve) => {
+          const reader = new FileReader()
+          reader.onloadend = () => resolve(reader.result)
+          reader.readAsDataURL(blob)
+        })
+        avatarMap[m.id] = dataUrl
+      } catch (e) {
+        console.warn(`Không thể tải avatar cho member ${m.id}:`, e)
+      }
+    })
+  await Promise.all(promises)
+  return avatarMap
+}
 
 // ══════════════════════════════════════════════════════════════
 //  SVG Generation — Vẽ phả đồ từ dữ liệu, không phụ thuộc DOM
@@ -65,7 +93,7 @@ function edgePath(x1, y1, x2, y2, type) {
  * Sinh SVG string hoàn chỉnh cho phả đồ
  * @returns {{ svgString: string, width: number, height: number }}
  */
-function generateFamilyTreeSVG(members, marriages, edgeType = 'smoothstep', hideSpouses = false) {
+function generateFamilyTreeSVG(members, marriages, edgeType = 'smoothstep', hideSpouses = false, avatarMap = {}) {
   const { nodes, edges } = buildGraph(members, marriages, edgeType, hideSpouses)
   if (nodes.length === 0) return { svgString: '', width: 0, height: 0 }
 
@@ -179,9 +207,15 @@ function generateFamilyTreeSVG(members, marriages, edgeType = 'smoothstep', hide
     const avatarR = 28
     svgParts.push(`<circle cx="${avatarCx}" cy="${avatarCy}" r="${avatarR}" fill="#f3f4f6" stroke="${borderColor}" stroke-width="2.5"/>`)
 
-    // Avatar text (first letter of last name)
-    const lastName = (d.fullName || '?').trim().split(' ').pop()
-    svgParts.push(`<text x="${avatarCx}" y="${avatarCy + 7}" text-anchor="middle" font-size="22" font-weight="bold" fill="${subColor}" font-family="Georgia, serif">${esc(lastName[0])}</text>`)
+    // Avatar: ảnh thật nếu có, fallback chữ cái đầu
+    const avatarDataUrl = avatarMap[d.id]
+    if (avatarDataUrl) {
+      svgParts.push(`<defs><clipPath id="clip-${d.id}"><circle cx="${avatarCx}" cy="${avatarCy}" r="${avatarR - 1}"/></clipPath></defs>`)
+      svgParts.push(`<image href="${avatarDataUrl}" x="${avatarCx - avatarR}" y="${avatarCy - avatarR}" width="${avatarR * 2}" height="${avatarR * 2}" clip-path="url(#clip-${d.id})" preserveAspectRatio="xMidYMid slice"/>`)
+    } else {
+      const lastName = (d.fullName || '?').trim().split(' ').pop()
+      svgParts.push(`<text x="${avatarCx}" y="${avatarCy + 7}" text-anchor="middle" font-size="22" font-weight="bold" fill="${subColor}" font-family="Georgia, serif">${esc(lastName[0])}</text>`)
+    }
 
     // Generation badge
     svgParts.push(`<circle cx="${x + 14}" cy="${y + 14}" r="13" fill="${borderColor}"/>`)
@@ -259,7 +293,7 @@ function generateHeaderSVG(treeName, pageWidth) {
     <rect x="0" y="${h - 2}" width="${pageWidth}" height="2" fill="#b45309" opacity="0.3"/>
     <text x="${pageWidth / 2}" y="42" text-anchor="middle" font-size="16" font-weight="bold" fill="#b45309" font-family="Georgia, serif" letter-spacing="8">GIA PHA</text>
     <text x="${pageWidth / 2}" y="78" text-anchor="middle" font-size="30" font-weight="bold" fill="#3d2817" font-family="Georgia, serif" letter-spacing="3">${esc(treeName)}</text>
-    <text x="${pageWidth / 2}" y="105" text-anchor="middle" font-size="13" fill="#8b5a2b" font-family="Georgia, serif">Ngay xuat: ${dateStr}</text>
+    <text x="${pageWidth / 2}" y="105" text-anchor="middle" font-size="13" fill="#8b5a2b" font-family="Georgia, serif">Ngày xuất: ${dateStr}</text>
     <line x1="${pageWidth / 2 - 100}" y1="118" x2="${pageWidth / 2 + 100}" y2="118" stroke="#b45309" stroke-width="1" opacity="0.3"/>
   </svg>`
 }
@@ -272,13 +306,13 @@ function generateLegendSVG(pageWidth) {
   let parts = []
   parts.push(`<rect width="${pageWidth}" height="${h}" fill="#faf6f0"/>`)
   parts.push(`<line x1="20" y1="2" x2="${pageWidth - 20}" y2="2" stroke="#b45309" stroke-width="1" opacity="0.25"/>`)
-  parts.push(`<text x="30" y="28" font-size="14" font-weight="bold" fill="#78350f" font-family="Georgia, serif">Chu thich:</text>`)
+  parts.push(`<text x="30" y="28" font-size="14" font-weight="bold" fill="#78350f" font-family="Georgia, serif">Chú thích:</text>`)
 
   // Row 1: Node types — màu KHỚP với card (xanh=nam, hồng=nữ, xám=mất)
   const items1 = [
     { x: 30, color: '#DBEAFE', border: '#2563EB', label: 'Nam' },
-    { x: 140, color: '#FCE7F3', border: '#DB2777', label: 'Nu' },
-    { x: 250, color: '#d1d5db', border: '#6b7280', label: 'Da mat' },
+    { x: 140, color: '#FCE7F3', border: '#DB2777', label: 'Nữ' },
+    { x: 250, color: '#d1d5db', border: '#6b7280', label: 'Đã mất' },
   ]
   items1.forEach(({ x, color, border, label }) => {
     parts.push(`<rect x="${x}" y="40" width="18" height="18" rx="3" fill="${color}" stroke="${border}" stroke-width="2"/>`)
@@ -287,9 +321,9 @@ function generateLegendSVG(pageWidth) {
 
   // Row 1: Edge types (tiếp theo) — chữ to hơn
   const items2 = [
-    { x: 380, dash: '', color: '#9ca3af', label: 'Cha/Me - Con' },
-    { x: 540, dash: '4 4', color: '#9ca3af', label: 'Hon nhan' },
-    { x: 680, dash: '2 4', color: '#9ca3af', label: 'Ly hon / Goa' },
+    { x: 380, dash: '', color: '#9ca3af', label: 'Cha/Mẹ - Con' },
+    { x: 540, dash: '4 4', color: '#9ca3af', label: 'Hôn nhân' },
+    { x: 680, dash: '2 4', color: '#9ca3af', label: 'Ly hôn / Goá' },
   ]
   items2.forEach(({ x, dash, color, label }) => {
     parts.push(`<line x1="${x}" y1="49" x2="${x + 32}" y2="49" stroke="${color}" stroke-width="2.5" ${dash ? `stroke-dasharray="${dash}"` : ''}/>`)
@@ -308,10 +342,104 @@ function generateFooterSVG(pageWidth, memberCount, genCount, marriageCount) {
     <rect width="${pageWidth}" height="${h}" fill="#faf6f0"/>
     <line x1="20" y1="4" x2="${pageWidth - 20}" y2="4" stroke="#b45309" stroke-width="1" opacity="0.25"/>
     <text x="${pageWidth / 2}" y="30" text-anchor="middle" font-size="14" fill="#3d2817" font-family="Georgia, serif" font-weight="bold">
-      Tong cong: ${memberCount} thanh vien - ${genCount} the he - ${marriageCount} hon nhan
+      Tổng cộng: ${memberCount} thành viên — ${genCount} thế hệ — ${marriageCount} hôn nhân
     </text>
-    <text x="${pageWidth / 2}" y="50" text-anchor="middle" font-size="10" fill="#b45309" opacity="0.5" font-family="Georgia, serif">He Thong Quan Ly Gia Pha</text>
+    <text x="${pageWidth / 2}" y="50" text-anchor="middle" font-size="10" fill="#b45309" opacity="0.5" font-family="Georgia, serif">Hệ Thống Quản Lý Gia Phả</text>
   </svg>`
+}
+
+// ══════════════════════════════════════════════════════════════
+//  Cover Page SVG (Trang bìa A4) — luôn đẹp & dễ đọc
+// ══════════════════════════════════════════════════════════════
+function generateCoverPageSVG(treeName, memberCount, genCount, marriageCount, w, h) {
+  const dateStr = new Date().toLocaleDateString('vi-VN', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  })
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+    <rect width="${w}" height="${h}" fill="#faf6f0"/>
+    <!-- Viền trang trí -->
+    <rect x="20" y="20" width="${w - 40}" height="${h - 40}" fill="none" stroke="#b45309" stroke-width="2" rx="4" opacity="0.3"/>
+    <rect x="28" y="28" width="${w - 56}" height="${h - 56}" fill="none" stroke="#b45309" stroke-width="0.5" rx="2" opacity="0.2"/>
+    <!-- Hoa văn góc -->
+    <text x="40" y="55" font-size="24" fill="#b45309" opacity="0.15" font-family="serif">❧</text>
+    <text x="${w - 40}" y="55" text-anchor="end" font-size="24" fill="#b45309" opacity="0.15" font-family="serif">❧</text>
+    <text x="40" y="${h - 35}" font-size="24" fill="#b45309" opacity="0.15" font-family="serif">❧</text>
+    <text x="${w - 40}" y="${h - 35}" text-anchor="end" font-size="24" fill="#b45309" opacity="0.15" font-family="serif">❧</text>
+    <!-- Tiêu đề phụ -->
+    <text x="${w / 2}" y="${h * 0.28}" text-anchor="middle" font-size="18" fill="#b45309" font-family="Georgia, serif" letter-spacing="10" font-weight="bold">GIA PHẢ</text>
+    <line x1="${w / 2 - 60}" y1="${h * 0.28 + 12}" x2="${w / 2 + 60}" y2="${h * 0.28 + 12}" stroke="#b45309" stroke-width="1" opacity="0.4"/>
+    <!-- Tên gia phả (chính) -->
+    <text x="${w / 2}" y="${h * 0.40}" text-anchor="middle" font-size="38" font-weight="bold" fill="#3d2817" font-family="Georgia, serif" letter-spacing="4">${esc(treeName)}</text>
+    <line x1="${w / 2 - 120}" y1="${h * 0.40 + 18}" x2="${w / 2 + 120}" y2="${h * 0.40 + 18}" stroke="#b45309" stroke-width="1.5" opacity="0.3"/>
+    <!-- Thống kê -->
+    <text x="${w / 2}" y="${h * 0.54}" text-anchor="middle" font-size="16" fill="#78350f" font-family="Georgia, serif">${memberCount} thành viên · ${genCount} thế hệ · ${marriageCount} hôn nhân</text>
+    <!-- Ngày xuất -->
+    <text x="${w / 2}" y="${h * 0.72}" text-anchor="middle" font-size="14" fill="#8b5a2b" font-family="Georgia, serif">Ngày xuất: ${dateStr}</text>
+    <!-- Footer -->
+    <text x="${w / 2}" y="${h * 0.88}" text-anchor="middle" font-size="11" fill="#b45309" opacity="0.5" font-family="Georgia, serif">Hệ Thống Quản Lý Gia Phả</text>
+  </svg>`
+}
+
+// ══════════════════════════════════════════════════════════════
+//  Legend Page SVG (Trang chú thích A4) — luôn đẹp & dễ đọc
+// ══════════════════════════════════════════════════════════════
+function generateLegendPageSVG(treeName, memberCount, genCount, marriageCount, w, h) {
+  let parts = []
+  parts.push(`<rect width="${w}" height="${h}" fill="#faf6f0"/>`)
+  // Viền
+  parts.push(`<rect x="20" y="20" width="${w - 40}" height="${h - 40}" fill="none" stroke="#b45309" stroke-width="2" rx="4" opacity="0.3"/>`)
+
+  const cx = w / 2
+  let y = 80
+
+  // Tiêu đề
+  parts.push(`<text x="${cx}" y="${y}" text-anchor="middle" font-size="22" font-weight="bold" fill="#3d2817" font-family="Georgia, serif" letter-spacing="5">CHÚ THÍCH PHẢ ĐỒ</text>`)
+  y += 16
+  parts.push(`<line x1="${cx - 100}" y1="${y}" x2="${cx + 100}" y2="${y}" stroke="#b45309" stroke-width="1" opacity="0.3"/>`)
+  y += 50
+
+  // Chú thích node
+  parts.push(`<text x="60" y="${y}" font-size="16" font-weight="bold" fill="#78350f" font-family="Georgia, serif">Màu sắc thẻ thành viên:</text>`)
+  y += 35
+  const nodeItems = [
+    { color: '#DBEAFE', border: '#2563EB', label: 'Nam (con trai, huyết thống)' },
+    { color: '#FCE7F3', border: '#DB2777', label: 'Nữ (con gái, vợ)' },
+    { color: '#d1d5db', border: '#6b7280', label: 'Đã mất (quá cố)' },
+  ]
+  nodeItems.forEach(({ color, border, label }) => {
+    parts.push(`<rect x="80" y="${y - 16}" width="28" height="28" rx="5" fill="${color}" stroke="${border}" stroke-width="2.5"/>`)
+    parts.push(`<text x="120" y="${y + 2}" font-size="15" fill="#3d2817" font-family="Georgia, serif">${label}</text>`)
+    y += 42
+  })
+
+  y += 20
+  // Chú thích đường nối
+  parts.push(`<text x="60" y="${y}" font-size="16" font-weight="bold" fill="#78350f" font-family="Georgia, serif">Kiểu đường nối:</text>`)
+  y += 35
+  const edgeItems = [
+    { dash: '', color: '#9ca3af', label: 'Cha/Mẹ — Con (trực hệ)' },
+    { dash: '4 4', color: '#9ca3af', label: 'Mẹ — Con (đường phụ)' },
+    { dash: '', color: '#d97706', label: 'Hôn nhân (đang chung sống)' },
+    { dash: '6 4', color: '#ef4444', label: 'Ly hôn' },
+    { dash: '8 4', color: '#6b7280', label: 'Goá' },
+  ]
+  edgeItems.forEach(({ dash, color, label }) => {
+    parts.push(`<line x1="80" y1="${y - 5}" x2="130" y2="${y - 5}" stroke="${color}" stroke-width="3" ${dash ? `stroke-dasharray="${dash}"` : ''}/>`)
+    parts.push(`<text x="145" y="${y}" font-size="15" fill="#3d2817" font-family="Georgia, serif">${label}</text>`)
+    y += 40
+  })
+
+  y += 30
+  // Thống kê
+  parts.push(`<line x1="60" y1="${y}" x2="${w - 60}" y2="${y}" stroke="#b45309" stroke-width="1" opacity="0.25"/>`)
+  y += 35
+  parts.push(`<text x="${cx}" y="${y}" text-anchor="middle" font-size="16" font-weight="bold" fill="#3d2817" font-family="Georgia, serif">Thống kê: ${memberCount} thành viên — ${genCount} thế hệ — ${marriageCount} hôn nhân</text>`)
+
+  // Footer
+  parts.push(`<text x="${cx}" y="${h - 40}" text-anchor="middle" font-size="11" fill="#b45309" opacity="0.5" font-family="Georgia, serif">Hệ Thống Quản Lý Gia Phả</text>`)
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${parts.join('')}</svg>`
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -322,6 +450,8 @@ export default function ExportPage() {
   const [pdfOptions, setPdfOptions] = useState({
     lineType: 'smoothstep',
     hideSpouses: false,
+    genFrom: '',
+    genTo: '',
   })
   const [exporting, setExporting] = useState(false)
   const treeRef = useRef(null)
@@ -342,82 +472,73 @@ export default function ExportPage() {
     enabled: !!treeId
   })
 
-  // ── Xuất PDF bằng Custom SVG Renderer ──
+  // ── Xuất PDF bằng Custom SVG Renderer (Multi-page) ──
   const handleExportTreePDF = useCallback(async () => {
     if (!canExport) return toast.error('Bạn không có quyền xuất file')
     if (!treeData?.members?.length) return toast.error('Chưa có thành viên trong cây')
 
     setExporting(true)
     try {
-      const members = treeData.members
-      const marriages = treeData.marriages || []
+      let members = treeData.members
+      let marriages = treeData.marriages || []
+
+      // ── Lọc theo đời ──
+      const gFrom = pdfOptions.genFrom ? parseInt(pdfOptions.genFrom) : null
+      const gTo = pdfOptions.genTo ? parseInt(pdfOptions.genTo) : null
+      if (gFrom || gTo) {
+        members = members.filter(m => {
+          const g = m.generation || 1
+          if (gFrom && g < gFrom) return false
+          if (gTo && g > gTo) return false
+          return true
+        })
+        const memberIds = new Set(members.map(m => m.id))
+        marriages = marriages.filter(mar => memberIds.has(mar.husbandId) && memberIds.has(mar.wifeId))
+      }
+
+      if (members.length === 0) throw new Error('Không có thành viên nào trong khoảng đời đã chọn')
+
+      // ── Tải avatar thành base64 ──
+      toast('Đang tải ảnh đại diện...', { icon: '⏳', duration: 2000 })
+      const avatarMap = await loadAvatarsAsBase64(members)
 
       // 1. Generate SVG phả đồ
       const { svgString: treeSvg, width: treeW, height: treeH } = generateFamilyTreeSVG(
-        members, marriages, pdfOptions.lineType, pdfOptions.hideSpouses
+        members, marriages, pdfOptions.lineType, pdfOptions.hideSpouses, avatarMap
       )
       if (!treeSvg) throw new Error('Không thể tạo phả đồ')
 
-      // 2. Tính kích thước PDF
-      const pageWidth = Math.max(treeW, 700)
-      const totalHeight = HEADER_HEIGHT + treeH + LEGEND_HEIGHT + FOOTER_HEIGHT
-
-      // 3. Auto landscape/portrait
-      const orientation = pageWidth > totalHeight ? 'landscape' : 'portrait'
-
-      // 4. Generate header/legend/footer SVGs
-      const headerSvg = generateHeaderSVG(currentTree?.name || 'Gia Phả', pageWidth)
       const maxGen = Math.max(...members.map(m => m.generation || 1))
-      const legendSvg = generateLegendSVG(pageWidth)
-      const footerSvg = generateFooterSVG(pageWidth, members.length, maxGen, marriages.length)
+      const scale = 2
 
-      // 5. Chuyển tất cả SVG → Canvas
-      const scale = 2 // HD quality
-      const [headerCanvas, treeCanvas, legendCanvas, footerCanvas] = await Promise.all([
-        svgToCanvas(headerSvg, pageWidth, HEADER_HEIGHT, scale),
-        svgToCanvas(treeSvg, treeW, treeH, scale),
-        svgToCanvas(legendSvg, pageWidth, LEGEND_HEIGHT, scale),
-        svgToCanvas(footerSvg, pageWidth, FOOTER_HEIGHT, scale),
-      ])
+      // ════════════════════════════════════════════════════════
+      //  TRANG 1 — Trang bìa (A4 cố định: 595 × 842 pt)
+      // ════════════════════════════════════════════════════════
+      const A4_W = 595, A4_H = 842
+      const coverSvg = generateCoverPageSVG(currentTree?.name || 'Gia Phả', members.length, maxGen, marriages.length, A4_W, A4_H)
+      const coverCanvas = await svgToCanvas(coverSvg, A4_W, A4_H, scale)
 
-      // 6. Tạo canvas tổng hợp — KHÔNG dùng ctx.scale để tránh double-scaling
-      const finalCanvas = document.createElement('canvas')
-      const finalW = pageWidth * scale
-      const finalH = totalHeight * scale
-      finalCanvas.width = finalW
-      finalCanvas.height = finalH
-      const ctx = finalCanvas.getContext('2d')
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: [A4_W, A4_H] })
+      pdf.addImage(coverCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, A4_W, A4_H)
 
-      // Fill background (pixel coords)
-      ctx.fillStyle = '#faf6f0'
-      ctx.fillRect(0, 0, finalW, finalH)
+      // ════════════════════════════════════════════════════════
+      //  TRANG 2 — Phả đồ (1 trang, kích thước tùy biến)
+      // ════════════════════════════════════════════════════════
+      const treeCanvas = await svgToCanvas(treeSvg, treeW, treeH, scale)
+      const treeOrientation = treeW > treeH ? 'landscape' : 'portrait'
+      pdf.addPage([treeW, treeH], treeOrientation)
+      pdf.addImage(treeCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, treeW, treeH)
 
-      // Vẽ các phần — tất cả dùng pixel coordinates
-      let curY = 0
-      ctx.drawImage(headerCanvas, 0, curY)
-      curY += HEADER_HEIGHT * scale
+      // ════════════════════════════════════════════════════════
+      //  TRANG 3 — Chú thích + thống kê (A4 cố định)
+      // ════════════════════════════════════════════════════════
+      const legendPageSvg = generateLegendPageSVG(currentTree?.name || 'Gia Phả', members.length, maxGen, marriages.length, A4_W, A4_H)
+      const legendPageCanvas = await svgToCanvas(legendPageSvg, A4_W, A4_H, scale)
+      pdf.addPage([A4_W, A4_H], 'portrait')
+      pdf.addImage(legendPageCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, A4_W, A4_H)
 
-      // Cây phả đồ — canh giữa nếu cần
-      const treeOffsetX = Math.max(0, (pageWidth - treeW) / 2 * scale)
-      ctx.drawImage(treeCanvas, treeOffsetX, curY)
-      curY += treeH * scale
-
-      ctx.drawImage(legendCanvas, 0, curY)
-      curY += LEGEND_HEIGHT * scale
-
-      ctx.drawImage(footerCanvas, 0, curY)
-
-      // 7. Canvas → PDF
-      const imgData = finalCanvas.toDataURL('image/jpeg', 0.95)
-      const pdf = new jsPDF({
-        orientation,
-        unit: 'px',
-        format: [pageWidth, totalHeight],
-      })
-      pdf.addImage(imgData, 'JPEG', 0, 0, pageWidth, totalHeight)
       pdf.save(`Gia_Pha_${currentTree?.name || 'Tree'}.pdf`)
-
-      toast.success('Xuất phả đồ PDF thành công!')
+      toast.success('Xuất PDF thành công (3 trang)!')
     } catch (err) {
       console.error('Export error:', err)
       toast.error('Lỗi xuất file: ' + err.message)
@@ -514,8 +635,29 @@ export default function ExportPage() {
   }
 
   // ── SVG Preview (nhỏ, inline) ──
-  const previewSvg = treeData?.members?.length
-    ? generateFamilyTreeSVG(treeData.members, treeData.marriages || [], pdfOptions.lineType, pdfOptions.hideSpouses)
+  // Lọc members cho preview theo genFrom/genTo
+  const filteredPreviewMembers = (() => {
+    if (!treeData?.members?.length) return []
+    let m = treeData.members
+    const gFrom = pdfOptions.genFrom ? parseInt(pdfOptions.genFrom) : null
+    const gTo = pdfOptions.genTo ? parseInt(pdfOptions.genTo) : null
+    if (gFrom || gTo) {
+      m = m.filter(mem => {
+        const g = mem.generation || 1
+        if (gFrom && g < gFrom) return false
+        if (gTo && g > gTo) return false
+        return true
+      })
+    }
+    return m
+  })()
+  const filteredPreviewMarriages = (() => {
+    if (!treeData?.marriages?.length || !filteredPreviewMembers.length) return []
+    const ids = new Set(filteredPreviewMembers.map(m => m.id))
+    return treeData.marriages.filter(mar => ids.has(mar.husbandId) && ids.has(mar.wifeId))
+  })()
+  const previewSvg = filteredPreviewMembers.length
+    ? generateFamilyTreeSVG(filteredPreviewMembers, filteredPreviewMarriages, pdfOptions.lineType, pdfOptions.hideSpouses)
     : null
 
   return (
@@ -556,19 +698,37 @@ export default function ExportPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-light text-amber-900 mb-2" style={{ fontFamily: 'Georgia, serif' }}>Tùy chọn khác</label>
-                <div className="flex flex-col gap-2 mt-2">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={pdfOptions.hideSpouses}
-                      onChange={(e) => setPdfOptions({ ...pdfOptions, hideSpouses: e.target.checked })}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-sm font-light text-amber-900" style={{ fontFamily: 'Georgia, serif' }}>Ẩn hôn phối (chỉ hiện trực hệ)</span>
-                  </label>
+                <label className="block text-sm font-light text-amber-900 mb-2" style={{ fontFamily: 'Georgia, serif' }}>Lọc theo đời</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number" min="1" placeholder="Từ đời"
+                    value={pdfOptions.genFrom}
+                    onChange={(e) => setPdfOptions({ ...pdfOptions, genFrom: e.target.value })}
+                    className="w-24 px-3 py-2 border border-amber-200 rounded-sm text-sm focus:outline-none focus:border-amber-900 bg-white"
+                    style={{ fontFamily: 'Georgia, serif' }}
+                  />
+                  <span className="text-amber-700 text-sm">→</span>
+                  <input
+                    type="number" min="1" placeholder="Đến đời"
+                    value={pdfOptions.genTo}
+                    onChange={(e) => setPdfOptions({ ...pdfOptions, genTo: e.target.value })}
+                    className="w-24 px-3 py-2 border border-amber-200 rounded-sm text-sm focus:outline-none focus:border-amber-900 bg-white"
+                    style={{ fontFamily: 'Georgia, serif' }}
+                  />
                 </div>
               </div>
+            </div>
+
+            <div className="mt-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={pdfOptions.hideSpouses}
+                  onChange={(e) => setPdfOptions({ ...pdfOptions, hideSpouses: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm font-light text-amber-900" style={{ fontFamily: 'Georgia, serif' }}>Ẩn hôn phối (chỉ hiện trực hệ)</span>
+              </label>
             </div>
 
             {/* Bản xem trước SVG */}
