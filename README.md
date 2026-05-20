@@ -29,9 +29,10 @@
 
 | Họ và tên | MSSV | Vai trò |
 | --- | --- | --- |
-| Lê Gia Quyền | 23521323 | Trưởng nhóm |
-| Phạm Thái Sơn | 23521361 | Frontend Developer |
-| Võ Ngọc Tài | 23521620 | Backend Developer |
+| Ngô Nhật Quân | 23521258 | Trưởng nhóm |
+| Trương Thanh Quang | 23521295 |
+| Đào Bảo Phúc | 23521192 |
+| Lê Quốc Đại | 23521323 |
 
 ---
 
