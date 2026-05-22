@@ -1,6 +1,9 @@
 import axios from 'axios'
 
-const api = axios.create({ baseURL: 'http://localhost:3001/api' })
+const api = axios.create({ 
+  // Nó sẽ lấy link trên Vercel, nếu không có thì mặc định lấy localhost để bạn code ở máy
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3001/api' 
+});
 
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token')
