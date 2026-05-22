@@ -2,7 +2,7 @@ import axios from 'axios'
 
 const api = axios.create({ 
   // Nó sẽ lấy link trên Vercel, nếu không có thì mặc định lấy localhost để bạn code ở máy
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3001/api' 
+  baseURL: process.env.REACT_APP_API_URL || 'https://gia-pha-a.vercel.app' 
 });
 
 api.interceptors.request.use(config => {
