@@ -5,7 +5,7 @@ const morgan  = require('morgan')
 const path    = require('path')
 
 const app = express()
-app.use(cors({ origin: 'http://localhost:5173' }))
+app.use(cors({ origin: 'https://gia-pha-a.vercel.app' }))
 app.use(express.json())
 app.use(morgan('dev'))
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
