@@ -5,7 +5,20 @@ const morgan  = require('morgan')
 const path    = require('path')
 
 const app = express()
-app.use(cors({ origin: 'https://gia-pha-a.vercel.app' }))
+
+// --- CẤU HÌNH CORS MỚI ---
+// Cho phép Frontend ở Localhost (máy tính) và Vercel (trên mạng) gọi API
+const allowedOrigins = [
+  'http://localhost:3000', 
+  'https://gia-pha-a.vercel.app'
+];
+
+app.use(cors({ 
+  origin: allowedOrigins,
+  credentials: true // Bắt buộc bật để gửi Cookie/Token khi đăng nhập
+}))
+// -------------------------
+
 app.use(express.json())
 app.use(morgan('dev'))
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
