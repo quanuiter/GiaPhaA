@@ -241,165 +241,197 @@ export default function TreePage() {
     }}>
 
       {/* ── Toolbar ─────────────────────────────────────── */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
-        padding: '10px 16px', background: '#faf8f3',
-        borderBottom: '1px solid #e5dcc8', flexShrink: 0, zIndex: 10,
-      }}>
-        <span style={{ fontWeight: 700, fontSize: 15, color: '#78350f' }}>Phả đồ</span>
-        <span style={{
-          fontSize: 12, color: '#8b5a2b', background: '#fef3c7',
-          padding: '2px 10px', borderRadius: 20, fontWeight: 500,
-        }}>{currentTree?.name}</span>
-        {!isLoading && (
-          <span style={{ fontSize: 11, color: '#a16207' }}>
-            {memberCount} thành viên · {marriageCount} hôn nhân
-          </span>
-        )}
-        {!isLoading && totalMemberCount > 0 && (
-          <div style={{ position: 'relative', marginLeft: 4 }}>
-            <input
-              type="text"
-              placeholder="🔍 Tìm thành viên..."
-              value={searchQuery}
-              onChange={e => { setSearchQuery(e.target.value); setSearchOpen(true); setFocusMemberId(null) }}
-              onFocus={() => searchQuery && setSearchOpen(true)}
-              onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
-              style={{
-                border: '1px solid #d4c9b8', borderRadius: 8, padding: '5px 10px',
-                fontSize: 12, color: '#78350f', background: '#fff',
-                outline: 'none', width: 180,
-              }}
-            />
-            {searchOpen && searchResults.length > 0 && (
-              <div style={{
-                position: 'absolute', top: '100%', left: 0, marginTop: 4,
-                background: '#fff', border: '1px solid #d4c9b8', borderRadius: 8,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 50,
-                maxHeight: 240, overflowY: 'auto', minWidth: 260,
-              }}>
-                {searchResults.map(m => (
-                  <div
-                    key={m.id}
-                    onMouseDown={() => handleSearchSelect(m)}
-                    style={{
-                      padding: '8px 12px', cursor: 'pointer', fontSize: 12,
-                      color: '#78350f', borderBottom: '1px solid #f3efe8',
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#fef3c7'}
-                    onMouseLeave={e => e.currentTarget.style.background = '#fff'}
-                  >
-                    <span style={{ fontWeight: 500 }}>{m.fullName}</span>
-                    <span style={{ fontSize: 10, color: '#a16207', marginLeft: 12 }}>Đời {m.generation}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+<div style={{
+  display: 'flex', flexDirection: 'column',
+  background: '#faf8f3', borderBottom: '1px solid #e5dcc8',
+  padding: '0 16px', flexShrink: 0, zIndex: 10,
+}}>
+  {/* Hàng 1: Tên + Badge + Tìm kiếm + Tra cứu xưng hô */}
+  <div style={{
+    display: 'flex', alignItems: 'center', gap: 10,
+    padding: '8px 0', flexWrap: 'wrap',
+  }}>
+    <span style={{ fontWeight: 700, fontSize: 15, color: '#78350f', whiteSpace: 'nowrap' }}>Phả đồ</span>
+    <span style={{
+      fontSize: 12, color: '#8b5a2b', background: '#fef3c7',
+      padding: '2px 10px', borderRadius: 20, fontWeight: 500, whiteSpace: 'nowrap',
+    }}>{currentTree?.name}</span>
+    {!isLoading && (
+      <span style={{ fontSize: 11, color: '#a16207' }}>
+        {memberCount} thành viên · {marriageCount} hôn nhân
+      </span>
+    )}
 
-        {/* Combobox đường nối con cái */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginLeft: 'auto' }}>
-          <button
-            onClick={() => setModal({ type: 'kinship' })}
+    {!isLoading && totalMemberCount > 0 && (
+      <>
+        <div style={{ width: 1, height: 18, background: '#e5dcc8', flexShrink: 0 }} />
+        <div style={{ position: 'relative' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#a16207"
+            style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+            <path d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" stroke="#a16207" strokeWidth="2" fill="none" strokeLinecap="round"/>
+          </svg>
+          <input
+            type="text"
+            placeholder="Tìm thành viên..."
+            value={searchQuery}
+            onChange={e => { setSearchQuery(e.target.value); setSearchOpen(true); setFocusMemberId(null) }}
+            onFocus={() => searchQuery && setSearchOpen(true)}
+            onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
             style={{
-              border: '1px solid #d4c9b8', borderRadius: 8, padding: '5px 12px',
-              fontSize: 12, color: '#b45309', background: '#fef3c7',
-              cursor: 'pointer', outline: 'none', fontWeight: 600,
-              display: 'flex', alignItems: 'center', gap: 6
+              border: '1px solid #d4c9b8', borderRadius: 8,
+              padding: '5px 10px 5px 28px',
+              fontSize: 12, color: '#78350f', background: '#fff',
+              outline: 'none', width: 180,
             }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05.02.01.03.03.04.04 1.14.83 1.93 1.94 1.93 3.41V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" /></svg>
-            Tra cứu xưng hô
-          </button>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#8b5a2b', cursor: 'pointer' }}>
-            <input type="checkbox" checked={hideSpouses} onChange={e => setHideSpouses(e.target.checked)} />
-            Ẩn hôn phối
-          </label>
-          {maxGen > 1 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <label style={{ fontSize: 12, color: '#8b5a2b', whiteSpace: 'nowrap' }}>Đời:</label>
-              <select
-                value={genFrom ?? ''}
-                onChange={e => {
-                  const v = e.target.value ? +e.target.value : null
-                  setGenFrom(v)
-                  if (v && genTo && v > genTo) setGenTo(v)
-                }}
-                style={{
-                  border: '1px solid #d4c9b8', borderRadius: 8, padding: '5px 8px',
-                  fontSize: 12, color: '#78350f', background: '#fef3c7',
-                  cursor: 'pointer', outline: 'none', minWidth: 70,
-                }}
-              >
-                <option value="">Từ đầu</option>
-                {genOptions.map(g => <option key={g} value={g}>Đời {g}</option>)}
-              </select>
-              <span style={{ fontSize: 12, color: '#8b5a2b' }}>→</span>
-              <select
-                value={genTo ?? ''}
-                onChange={e => {
-                  const v = e.target.value ? +e.target.value : null
-                  setGenTo(v)
-                  if (v && genFrom && v < genFrom) setGenFrom(v)
-                }}
-                style={{
-                  border: '1px solid #d4c9b8', borderRadius: 8, padding: '5px 8px',
-                  fontSize: 12, color: '#78350f', background: '#fef3c7',
-                  cursor: 'pointer', outline: 'none', minWidth: 70,
-                }}
-              >
-                <option value="">Cuối</option>
-                {genOptions.map(g => <option key={g} value={g}>Đời {g}</option>)}
-              </select>
+          />
+          {searchOpen && searchResults.length > 0 && (
+            <div style={{
+              position: 'absolute', top: '100%', left: 0, marginTop: 4,
+              background: '#fff', border: '1px solid #d4c9b8', borderRadius: 8,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 50,
+              maxHeight: 240, overflowY: 'auto', minWidth: 260,
+            }}>
+              {searchResults.map(m => (
+                <div
+                  key={m.id}
+                  onMouseDown={() => handleSearchSelect(m)}
+                  style={{
+                    padding: '8px 12px', cursor: 'pointer', fontSize: 12,
+                    color: '#78350f', borderBottom: '1px solid #f3efe8',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#fef3c7'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+                >
+                  <span style={{ fontWeight: 500 }}>{m.fullName}</span>
+                  <span style={{ fontSize: 10, color: '#a16207', marginLeft: 12 }}>Đời {m.generation}</span>
+                </div>
+              ))}
             </div>
           )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <label style={{ fontSize: 12, color: '#8b5a2b', whiteSpace: 'nowrap' }}>
-              Đường nối:
-            </label>
-            <select value={edgeType} onChange={e => setEdgeType(e.target.value)} style={{
-              border: '1px solid #d4c9b8', borderRadius: 8, padding: '5px 10px',
+        </div>
+      </>
+    )}
+
+    <div style={{ flex: 1 }} />
+
+    <button
+      onClick={() => setModal({ type: 'kinship' })}
+      style={{
+        border: '1px solid #d4c9b8', borderRadius: 8, padding: '5px 12px',
+        fontSize: 12, color: '#b45309', background: '#fef3c7',
+        cursor: 'pointer', outline: 'none', fontWeight: 600,
+        display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap',
+      }}
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05.02.01.03.03.04.04 1.14.83 1.93 1.94 1.93 3.41V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+      </svg>
+      Tra cứu xưng hô
+    </button>
+  </div>
+
+  {/* Hàng 2: Bộ lọc + Controls + Legend */}
+  <div style={{
+    display: 'flex', alignItems: 'center', gap: 14,
+    padding: '6px 0 7px', borderTop: '1px solid #f0e9da', flexWrap: 'wrap',
+  }}>
+    {/* Lọc đời */}
+    {maxGen > 1 && (
+      <>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 11, color: '#8b5a2b', whiteSpace: 'nowrap' }}>Đời:</span>
+          <select
+            value={genFrom ?? ''}
+            onChange={e => {
+              const v = e.target.value ? +e.target.value : null
+              setGenFrom(v)
+              if (v && genTo && v > genTo) setGenTo(v)
+            }}
+            style={{
+              border: '1px solid #d4c9b8', borderRadius: 8, padding: '4px 8px',
               fontSize: 12, color: '#78350f', background: '#fef3c7',
               cursor: 'pointer', outline: 'none',
-            }}>
-              {EDGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </div>
+            }}
+          >
+            <option value="">Từ đầu</option>
+            {genOptions.map(g => <option key={g} value={g}>Đời {g}</option>)}
+          </select>
+          <span style={{ fontSize: 11, color: '#a16207' }}>→</span>
+          <select
+            value={genTo ?? ''}
+            onChange={e => {
+              const v = e.target.value ? +e.target.value : null
+              setGenTo(v)
+              if (v && genFrom && v < genFrom) setGenFrom(v)
+            }}
+            style={{
+              border: '1px solid #d4c9b8', borderRadius: 8, padding: '4px 8px',
+              fontSize: 12, color: '#78350f', background: '#fef3c7',
+              cursor: 'pointer', outline: 'none',
+            }}
+          >
+            <option value="">Cuối</option>
+            {genOptions.map(g => <option key={g} value={g}>Đời {g}</option>)}
+          </select>
         </div>
+        <div style={{ width: 1, height: 16, background: '#e5dcc8', flexShrink: 0 }} />
+      </>
+    )}
 
-        {/* Legend */}
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-          {[
-            { shape: 'rect', color: '#b45309', bg: '#fcd34d', label: 'Huyết thống' },
-            { shape: 'rect', color: '#b45309', bg: '#fef3c7', label: 'Dâu / Rể' },
-            { shape: 'rect', color: '#6b7280', bg: '#d1d5db', label: 'Đã mất' },
-            { shape: 'line', color: MARRIAGE_COLORS.living.stroke, dash: false, label: 'Sống chung' },
-            { shape: 'line', color: MARRIAGE_COLORS.divorced.stroke, dash: true, label: 'Ly hôn' },
-            { shape: 'line', color: MARRIAGE_COLORS.widowed.stroke, dash: true, label: 'Góa' },
-            { shape: 'line', color: '#9ca3af', dash: true, label: 'Mẹ → Con' },
-          ].map(({ shape, color, bg, label, dash }) => (
-            <div key={label} style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              fontSize: 11, color: '#8b5a2b', fontWeight: 500,
-            }}>
-              {shape === 'rect'
-                ? <div style={{
-                  width: 14, height: 14, borderRadius: 3, background: bg,
-                  border: `2.5px solid ${color}`
-                }} />
-                : <svg width="24" height="8">
-                  <line x1="0" y1="4" x2="24" y2="4"
-                    stroke={color} strokeWidth="2.5"
-                    strokeDasharray={dash ? '5 3' : undefined} />
-                </svg>
-              }
-              {label}
-            </div>
-          ))}
+    {/* Đường nối */}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <span style={{ fontSize: 11, color: '#8b5a2b', whiteSpace: 'nowrap' }}>Đường nối:</span>
+      <select value={edgeType} onChange={e => setEdgeType(e.target.value)} style={{
+        border: '1px solid #d4c9b8', borderRadius: 8, padding: '4px 8px',
+        fontSize: 12, color: '#78350f', background: '#fef3c7',
+        cursor: 'pointer', outline: 'none',
+      }}>
+        {EDGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+    </div>
+
+    <div style={{ width: 1, height: 16, background: '#e5dcc8', flexShrink: 0 }} />
+
+    {/* Ẩn hôn phối */}
+    <label style={{
+      display: 'flex', alignItems: 'center', gap: 5,
+      fontSize: 12, color: '#8b5a2b', cursor: 'pointer', whiteSpace: 'nowrap',
+    }}>
+      <input type="checkbox" checked={hideSpouses} onChange={e => setHideSpouses(e.target.checked)} />
+      Ẩn hôn phối
+    </label>
+
+    <div style={{ width: 1, height: 16, background: '#e5dcc8', flexShrink: 0 }} />
+
+    {/* Legend */}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginLeft: 'auto' }}>
+      {[
+        { shape: 'rect', color: '#b45309', bg: '#fcd34d', label: 'Huyết thống' },
+        { shape: 'rect', color: '#b45309', bg: '#fef3c7', label: 'Dâu / Rể' },
+        { shape: 'rect', color: '#6b7280', bg: '#d1d5db', label: 'Đã mất' },
+        { shape: 'line', color: MARRIAGE_COLORS.living.stroke,   dash: false, label: 'Sống chung' },
+        { shape: 'line', color: MARRIAGE_COLORS.divorced.stroke, dash: true,  label: 'Ly hôn' },
+        { shape: 'line', color: MARRIAGE_COLORS.widowed.stroke,  dash: true,  label: 'Góa' },
+        { shape: 'line', color: '#9ca3af', dash: true, label: 'Mẹ → Con' },
+      ].map(({ shape, color, bg, label, dash }) => (
+        <div key={label} style={{
+          display: 'flex', alignItems: 'center', gap: 4,
+          fontSize: 11, color: '#8b5a2b',
+        }}>
+          {shape === 'rect'
+            ? <div style={{ width: 13, height: 13, borderRadius: 3, background: bg, border: `2px solid ${color}`, flexShrink: 0 }} />
+            : <svg width="22" height="8" style={{ flexShrink: 0 }}>
+                <line x1="0" y1="4" x2="22" y2="4" stroke={color} strokeWidth="2.5"
+                  strokeDasharray={dash ? '5 3' : undefined} />
+              </svg>
+          }
+          {label}
         </div>
-      </div>
+      ))}
+    </div>
+  </div>
+</div>
 
       {/* ── Canvas ──────────────────────────────────────── */}
       <div style={{ flex: 1, position: 'relative' }}>

@@ -10,6 +10,8 @@ export default function AdminPage() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [formData, setFormData] = useState({ username: '', role: 'editor' })
   const [submitting, setSubmitting] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState('')
+  const [deleting, setDeleting] = useState(false)
   
   // State cho phần Phê duyệt yêu cầu
   const [selectedUserForApproval, setSelectedUserForApproval] = useState(null)
@@ -271,14 +273,18 @@ export default function AdminPage() {
                         <span className="inline-block px-3 py-1 bg-amber-200 text-amber-900 text-xs rounded-sm">{roleLabel[tu.role]}</span>
                       </td>
                       <td className="px-4 py-3 text-sm">
-                        <select
-                          value={tu.role}
-                          onChange={(e) => handleRoleChange(tu.user.username, e.target.value)}
-                          className="px-3 py-1.5 border border-amber-200 rounded-sm text-sm focus:outline-none focus:border-amber-900 bg-white font-light"
-                          style={{fontFamily: 'Georgia, serif'}}
-                        >
-                          {roleOptions.map(role => (<option key={role} value={role}>{roleLabel[role]}</option>))}
-                        </select>
+                        {tu.userId === user?.id ? (
+                          <span className="px-3 py-1.5 text-sm font-light text-amber-500 italic" style={{fontFamily: 'Georgia, serif'}}>Chính bạn</span>
+                        ) : (
+                          <select
+                            value={tu.role}
+                            onChange={(e) => handleRoleChange(tu.user.username, e.target.value)}
+                            className="px-3 py-1.5 border border-amber-200 rounded-sm text-sm focus:outline-none focus:border-amber-900 bg-white font-light"
+                            style={{fontFamily: 'Georgia, serif'}}
+                          >
+                            {roleOptions.map(role => (<option key={role} value={role}>{roleLabel[role]}</option>))}
+                          </select>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-sm">
                         {tu.userId !== user?.id && (
@@ -369,6 +375,65 @@ export default function AdminPage() {
             <br/>• <span className="font-medium">Biên tập viên:</span> Có thể thêm, sửa, xóa dữ liệu
             <br/>• <span className="font-medium">Khách:</span> Chỉ có thể xem dữ liệu
           </p>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════ */}
+      {/*  VÙNG NGUY HIỂM — Xóa cây gia phả       */}
+      {/* ══════════════════════════════════════════ */}
+      {activeTab === 'users' && (
+        <div className="mt-12 border-2 border-red-300 bg-red-50 rounded-sm p-6 space-y-4">
+          <h3 className="text-lg font-medium text-red-900" style={{fontFamily: 'Georgia, serif'}}>
+            ⚠ Vùng nguy hiểm
+          </h3>
+          <p className="text-sm font-light text-red-800" style={{fontFamily: 'Georgia, serif'}}>
+            Xóa cây gia phả <strong>"{currentTree?.name}"</strong> vĩnh viễn. 
+            Tất cả thành viên, hôn nhân, sự kiện, và dữ liệu liên quan sẽ bị xóa và <strong>không thể khôi phục</strong>.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-start sm:items-end gap-3">
+            <div className="flex-1 max-w-xs">
+              <label className="block text-sm font-light text-red-800 mb-1" style={{fontFamily: 'Georgia, serif'}}>
+                Nhập <strong>YES</strong> để xác nhận xóa:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirm}
+                onChange={(e) => setDeleteConfirm(e.target.value)}
+                placeholder="Nhập YES"
+                className="w-full px-3 py-2 border-2 border-red-300 rounded-sm text-sm focus:outline-none focus:border-red-600 bg-white font-light"
+                style={{fontFamily: 'Georgia, serif'}}
+              />
+            </div>
+            <button
+              disabled={deleteConfirm !== 'YES' || deleting}
+              onClick={async () => {
+                setDeleting(true)
+                try {
+                  await api.delete(`/trees/${treeId}`)
+                  toast.success('Đã xóa cây gia phả thành công')
+                  // Chuyển về trang chọn cây
+                  const { setCurrentTree } = useAuthStore.getState()
+                  setCurrentTree(null)
+                  window.location.href = '/'
+                } catch (err) {
+                  toast.error('Lỗi xóa cây: ' + (err.response?.data?.message || err.message))
+                } finally {
+                  setDeleting(false)
+                }
+              }}
+              className="px-5 py-2 bg-red-700 text-white text-sm font-light hover:bg-red-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors rounded-sm"
+              style={{fontFamily: 'Georgia, serif'}}
+            >
+              {deleting ? 'Đang xóa...' : '🗑 Xóa cây gia phả'}
+            </button>
+          </div>
+
+          {deleteConfirm.length > 0 && deleteConfirm !== 'YES' && (
+            <p className="text-xs text-red-600 font-light" style={{fontFamily: 'Georgia, serif'}}>
+              Vui lòng nhập chính xác "YES" (viết hoa) để xác nhận.
+            </p>
+          )}
         </div>
       )}
     </div>

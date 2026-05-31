@@ -52,8 +52,10 @@ export default function MemberDetailPage() {
   const [editingAchieve, setEditingAchieve] = useState(null)
 
   const [deathForm, setDeathForm] = useState({
-    deathDate: '', cause: 'natural', burialPlace: 'cemetery', note: ''
+    deathDate: '', cause: '', burialPlace: '', note: ''
   })
+  const [customCause, setCustomCause] = useState('')
+  const [customBurialPlace, setCustomBurialPlace] = useState('')
   const [marriageForm, setMarriageForm] = useState({
     spouseId: '', marriageDate: '', status: 'living', divorceDate: '', note: ''
   })
@@ -77,6 +79,18 @@ export default function MemberDetailPage() {
     queryFn: () => api.members().then(r => r.data),
     enabled: !!currentTree?.id,
   })
+  const { data: deathCauseCats = [] } = useQuery({
+    queryKey: ['categories', currentTree?.id, 'death_cause'],
+    queryFn: () => api.categories('?type=death_cause').then(r => r.data ?? r),
+    enabled: !!currentTree?.id,
+  })
+  const { data: burialPlaceCats = [] } = useQuery({
+    queryKey: ['categories', currentTree?.id, 'burial_place'],
+    queryFn: () => api.categories('?type=burial_place').then(r => r.data ?? r),
+    enabled: !!currentTree?.id,
+  })
+  const activeCauses = deathCauseCats.filter(c => c.isActive !== false)
+  const activeBurials = burialPlaceCats.filter(c => c.isActive !== false)
 
   // ── Mutations ─────────────────────────────────────────────────
   const deathMutation = useMutation({
@@ -161,6 +175,15 @@ export default function MemberDetailPage() {
       marriageDate: marriageForm.marriageDate || null,
       status: 'living', note: marriageForm.note
     })
+  }
+
+  const handleRecordDeath = () => {
+    const payload = {
+      ...deathForm,
+      cause: deathForm.cause === '__other__' ? customCause : deathForm.cause,
+      burialPlace: deathForm.burialPlace === '__other__' ? customBurialPlace : deathForm.burialPlace,
+    }
+    deathMutation.mutate(payload)
   }
 
   // ── Guards ────────────────────────────────────────────────────
@@ -616,16 +639,38 @@ export default function MemberDetailPage() {
             </Field2>
             <div className="grid grid-cols-2 gap-3">
               <Field2 label="Nguyên nhân">
-                <select className="inp2" value={deathForm.cause}
-                  onChange={e => setDeathForm(f => ({ ...f, cause: e.target.value }))}>
-                  {CAUSE_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                <select className="inp2" value={activeCauses.some(c => c.label === deathForm.cause) || deathForm.cause === '__other__' || deathForm.cause === '' ? deathForm.cause : '__other__'}
+                  onChange={e => { setDeathForm(f => ({ ...f, cause: e.target.value })); if (e.target.value !== '__other__') setCustomCause('') }}>
+                  <option value="">— Chọn nguyên nhân —</option>
+                  {activeCauses.map(c => (
+                    <option key={c.value} value={c.label}>{c.label}</option>
+                  ))}
+                  {deathForm.cause && !activeCauses.some(c => c.label === deathForm.cause) && deathForm.cause !== '__other__' && deathForm.cause !== '' && (
+                    <option value={deathForm.cause}>{deathForm.cause} (cũ)</option>
+                  )}
+                  <option value="__other__">Khác...</option>
                 </select>
+                {deathForm.cause === '__other__' && (
+                  <input className="inp2" style={{marginTop: '0.5rem'}} placeholder="Nhập nguyên nhân..."
+                    value={customCause} onChange={e => setCustomCause(e.target.value)}/>
+                )}
               </Field2>
               <Field2 label="Nơi mai táng">
-                <select className="inp2" value={deathForm.burialPlace}
-                  onChange={e => setDeathForm(f => ({ ...f, burialPlace: e.target.value }))}>
-                  {BURIAL_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                <select className="inp2" value={activeBurials.some(c => c.label === deathForm.burialPlace) || deathForm.burialPlace === '__other__' || deathForm.burialPlace === '' ? deathForm.burialPlace : '__other__'}
+                  onChange={e => { setDeathForm(f => ({ ...f, burialPlace: e.target.value })); if (e.target.value !== '__other__') setCustomBurialPlace('') }}>
+                  <option value="">— Chọn nơi mai táng —</option>
+                  {activeBurials.map(c => (
+                    <option key={c.value} value={c.label}>{c.label}</option>
+                  ))}
+                  {deathForm.burialPlace && !activeBurials.some(c => c.label === deathForm.burialPlace) && deathForm.burialPlace !== '__other__' && deathForm.burialPlace !== '' && (
+                    <option value={deathForm.burialPlace}>{deathForm.burialPlace} (cũ)</option>
+                  )}
+                  <option value="__other__">Khác...</option>
                 </select>
+                {deathForm.burialPlace === '__other__' && (
+                  <input className="inp2" style={{marginTop: '0.5rem'}} placeholder="Nhập nơi mai táng..."
+                    value={customBurialPlace} onChange={e => setCustomBurialPlace(e.target.value)}/>
+                )}
               </Field2>
             </div>
             <Field2 label="Ghi chú">
@@ -635,8 +680,8 @@ export default function MemberDetailPage() {
           </div>
           <div className="flex gap-3 mt-6">
             <button onClick={() => setShowDeathForm(false)} className="flex-1 py-2.5 border-2 border-amber-900 border-opacity-30 text-amber-900 rounded-sm text-sm hover:bg-amber-200 font-light" style={{ fontFamily: 'Georgia, serif' }}>Hủy</button>
-            <button onClick={() => deathMutation.mutate(deathForm)}
-              disabled={!deathForm.deathDate || deathMutation.isPending}
+            <button onClick={handleRecordDeath}
+              disabled={!deathForm.deathDate || deathMutation.isPending || (deathForm.cause === '__other__' && !customCause) || (deathForm.burialPlace === '__other__' && !customBurialPlace)}
               className="flex-1 py-2.5 bg-amber-900 text-amber-50 rounded-sm text-sm hover:bg-amber-950 disabled:opacity-50 font-light" style={{ fontFamily: 'Georgia, serif' }}>
               {deathMutation.isPending ? 'Đang lưu...' : 'Xác Nhận'}
             </button>

@@ -13,7 +13,7 @@
  *  - Ảnh đại diện (upload)
  */
 import { useState, useEffect, useRef } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { treeApi } from '../../../services/api'
 import { Solar } from 'lunar-javascript'
@@ -30,7 +30,7 @@ export default function EditMemberModal({ member, onClose }) {
   const qc  = useQueryClient()
   const fileRef = useRef()
 
-const [form, setForm] = useState({
+  const [form, setForm] = useState({
     fullName:   '', nickname:   '',
     gender:     'male', birthDate: '', birthDateLunar: '',
     birthPlace: '', occupation: '',
@@ -39,17 +39,38 @@ const [form, setForm] = useState({
   })
   const [avatarFile, setAvatarFile] = useState(null)
   const [avatarPreview, setAvatarPreview] = useState(null)
+  const [customOccupation, setCustomOccupation] = useState('')
+  const [customHometown,   setCustomHometown]   = useState('')
+  const [customBirthPlace, setCustomBirthPlace] = useState('')
+
+  // ── Danh mục hệ thống ──
+  const { data: occupationCats = [], isLoading: loadingOccupation } = useQuery({
+    queryKey: ['categories', currentTree?.id, 'occupation'],
+    queryFn:  () => api.categories('?type=occupation').then(r => r.data ?? r),
+    enabled:  !!currentTree?.id,
+  })
+  const { data: hometownCats = [], isLoading: loadingHometown } = useQuery({
+    queryKey: ['categories', currentTree?.id, 'hometown'],
+    queryFn:  () => api.categories('?type=hometown').then(r => r.data ?? r),
+    enabled:  !!currentTree?.id,
+  })
+  const activeOccupations = occupationCats.filter(c => c.isActive !== false)
+  const activeHometowns   = hometownCats.filter(c => c.isActive !== false)
 
   useEffect(() => {
     if (!member) return
+    const occ = member.occupation ?? ''
+    const ht  = member.hometown   ?? ''
+    const bp  = member.birthPlace ?? ''
+
     setForm({
       fullName:   member.fullName   ?? '',
       nickname:   member.nickname   ?? '',
       gender:     member.gender     ?? 'male',
       birthDate:  member.birthDate  ? member.birthDate.slice(0, 10) : '',
-      birthPlace: member.birthPlace ?? '',
-      occupation: member.occupation ?? '',
-      hometown:   member.hometown   ?? '',
+      birthPlace: bp,
+      occupation: occ,
+      hometown:   ht,
       address:    member.address    ?? '',
       bio:        member.bio        ?? '',
       generation: member.generation ?? 1,
@@ -74,9 +95,9 @@ const [form, setForm] = useState({
   }
 
   const mutation = useMutation({
-    mutationFn: () => {
+    mutationFn: (data) => {
       const fd = new FormData()
-      Object.entries(form).forEach(([k, v]) => { if (v !== '') fd.append(k, v) })
+      Object.entries(data).forEach(([k, v]) => { if (v !== '') fd.append(k, v) })
       if (avatarFile) fd.append('avatar', avatarFile)
       return api.updateMember(member.id, fd)
     },
@@ -95,8 +116,24 @@ const [form, setForm] = useState({
     if (form.nickname.length > 100) return toast.error('Tên gọi khác tối đa 100 ký tự')
     if (form.birthDate && form.birthDate > TODAY)
       return toast.error('Ngày sinh không được vượt ngày hiện tại')
-    mutation.mutate()
+    if (form.phone && !/^0\d{9,10}$/.test(form.phone))
+      return toast.error('Số điện thoại phải bắt đầu bằng 0 và có 10-11 chữ số')
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+      return toast.error('Email không đúng định dạng')
+    if (form.occupation === '__other__' && !customOccupation.trim())
+      return toast.error('Vui lòng nhập nghề nghiệp')
+    if (form.hometown === '__other__' && !customHometown.trim())
+      return toast.error('Vui lòng nhập quê quán')
+    if (form.birthPlace === '__other__' && !customBirthPlace.trim())
+      return toast.error('Vui lòng nhập nơi sinh')
+
+    const payload = { ...form }
+    if (payload.occupation === '__other__') payload.occupation = customOccupation.trim()
+    if (payload.hometown   === '__other__') payload.hometown   = customHometown.trim()
+    if (payload.birthPlace  === '__other__') payload.birthPlace  = customBirthPlace.trim()
+    mutation.mutate(payload)
   }
+
   const handleBirthDateChange = (e) => {
     const val = e.target.value;
     setForm(f => ({ ...f, birthDate: val }));
@@ -106,24 +143,21 @@ const [form, setForm] = useState({
         const [year, month, day] = val.split('-');
         const solar = Solar.fromYmd(parseInt(year, 10), parseInt(month, 10), parseInt(day, 10));
         const lunar = solar.getLunar();
-        // Định dạng ra chuỗi DD/MM/YYYY
         const lDay = lunar.getDay().toString().padStart(2, '0');
         const lMonth = lunar.getMonth().toString().padStart(2, '0');
         setForm(f => ({ ...f, birthDateLunar: `${lDay}/${lMonth}/${lunar.getYear()}` }));
-      } catch (err) {
-        // bỏ qua nếu lỗi parse
-      }
+      } catch (err) {}
     } else {
       setForm(f => ({ ...f, birthDateLunar: '' }));
     }
   }
+
   return (
     <FloatModal
       title="Chỉnh sửa hồ sơ"
       subtitle={`${member?.fullName}`}
       onClose={onClose} width={600}
     >
-      {/* ── Ảnh đại diện ───────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
         <div style={{
           width: 70, height: 70, borderRadius: '50%',
@@ -165,15 +199,11 @@ const [form, setForm] = useState({
             </Select>
           </Field>
           <Field label="Ngày tháng năm sinh">
-            {/* 👉 ĐỔI SỰ KIỆN onChange SANG HÀM TỰ TÍNH ÂM LỊCH */}
             <Input type="date" value={form.birthDate} onChange={handleBirthDateChange} max={TODAY}/>
           </Field>
-
-          {/* 👉 THÊM Ô NGÀY ÂM LỊCH */}
           <Field label="Ngày sinh (Âm lịch)">
             <Input value={form.birthDateLunar} onChange={set('birthDateLunar')} placeholder="VD: 15/08/1990"/>
           </Field>
-
           <Field label="Đời thứ">
             <Input type="number" value={form.generation} onChange={set('generation')} min={1} max={50}/>
           </Field>
@@ -183,19 +213,50 @@ const [form, setForm] = useState({
       <Section title="Thông tin cư trú & Liên hệ">
         <Grid2>
           <Field label="Quê quán">
-            <Input value={form.hometown} onChange={set('hometown')} placeholder="Quê gốc..."/>
+            <Select value={activeHometowns.some(c => c.label === form.hometown) || form.hometown === '__other__' || !form.hometown ? form.hometown : '__other__'}
+              onChange={e => { setForm(f => ({...f, hometown: e.target.value})); if (e.target.value !== '__other__') setCustomHometown('') }}>
+              <option value="">— Chọn quê quán —</option>
+              {activeHometowns.map(c => <option key={c.value} value={c.label}>{c.label}</option>)}
+              {form.hometown && !activeHometowns.some(c => c.label === form.hometown) && form.hometown !== '__other__' && (
+                <option value={form.hometown}>{form.hometown} (cũ)</option>
+              )}
+              <option value="__other__">Khác...</option>
+            </Select>
+            {form.hometown === '__other__' && (
+              <Input value={customHometown} onChange={e => setCustomHometown(e.target.value)} placeholder="Nhập quê quán..." style={{marginTop:4}}/>
+            )}
           </Field>
           <Field label="Nghề nghiệp">
-            <Input value={form.occupation} onChange={set('occupation')} placeholder="Giáo viên..."/>
+            <Select value={activeOccupations.some(c => c.label === form.occupation) || form.occupation === '__other__' || !form.occupation ? form.occupation : '__other__'}
+              onChange={e => { setForm(f => ({...f, occupation: e.target.value})); if (e.target.value !== '__other__') setCustomOccupation('') }}>
+              <option value="">— Chọn nghề nghiệp —</option>
+              {activeOccupations.map(c => <option key={c.value} value={c.label}>{c.label}</option>)}
+              {form.occupation && !activeOccupations.some(c => c.label === form.occupation) && form.occupation !== '__other__' && (
+                <option value={form.occupation}>{form.occupation} (cũ)</option>
+              )}
+              <option value="__other__">Khác...</option>
+            </Select>
+            {form.occupation === '__other__' && (
+              <Input value={customOccupation} onChange={e => setCustomOccupation(e.target.value)} placeholder="Nhập nghề nghiệp..." style={{marginTop:4}}/>
+            )}
           </Field>
           <Field label="Nơi sinh">
-            <Input value={form.birthPlace} onChange={set('birthPlace')} placeholder="Hà Nội..."/>
+            <Select value={activeHometowns.some(c => c.label === form.birthPlace) || form.birthPlace === '__other__' || !form.birthPlace ? form.birthPlace : '__other__'}
+              onChange={e => { setForm(f => ({...f, birthPlace: e.target.value})); if (e.target.value !== '__other__') setCustomBirthPlace('') }}>
+              <option value="">— Chọn nơi sinh —</option>
+              {activeHometowns.map(c => <option key={c.value} value={c.label}>{c.label}</option>)}
+              {form.birthPlace && !activeHometowns.some(c => c.label === form.birthPlace) && form.birthPlace !== '__other__' && (
+                <option value={form.birthPlace}>{form.birthPlace} (cũ)</option>
+              )}
+              <option value="__other__">Khác...</option>
+            </Select>
+            {form.birthPlace === '__other__' && (
+              <Input value={customBirthPlace} onChange={e => setCustomBirthPlace(e.target.value)} placeholder="Nhập nơi sinh..." style={{marginTop:4}}/>
+            )}
           </Field>
           <Field label="Địa chỉ hiện tại">
             <Input value={form.address} onChange={set('address')} placeholder="Số nhà, đường, quận..."/>
           </Field>
-
-          {/* 👉 THÊM Ô SĐT VÀ EMAIL */}
           <Field label="Số điện thoại">
             <Input value={form.phone} onChange={set('phone')} placeholder="09xxxx..."/>
           </Field>

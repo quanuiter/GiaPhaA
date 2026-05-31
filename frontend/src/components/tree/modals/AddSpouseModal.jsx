@@ -28,16 +28,37 @@ export default function AddSpouseModal({ member, onClose }) {
   const modalTitleSpouse = isHusband ? 'hôn thê' : 'hôn phu'
 
   const [isNew, setIsNew] = useState(true)
+  const [customOccupation, setCustomOccupation] = useState('')
+  const [customHometown,   setCustomHometown]   = useState('')
+  const [customBirthPlace, setCustomBirthPlace] = useState('')
   const [spouseForm, setSpouseForm] = useState({
-    // Thông tin vợ/chồng mới (BM1)
     fullName: '', nickname: '', gender: isHusband ? 'female' : 'male',
     birthDate: '', birthPlace: '', occupation: '', hometown: '',
     address: '', bio: '',
-    // Thông tin hôn nhân (BM2)
     marriageDate: '', venue: '', divorceDate: '', note: '',
     status: 'living',
-    spouseId: '',   // khi chọn có sẵn
+    spouseId: '',
   })
+
+  // ── Danh mục hệ thống ──
+  const { data: occupationCats = [] } = useQuery({
+    queryKey: ['categories', currentTree?.id, 'occupation'],
+    queryFn:  () => api.categories('?type=occupation').then(r => r.data),
+    enabled:  !!currentTree?.id,
+  })
+  const { data: hometownCats = [] } = useQuery({
+    queryKey: ['categories', currentTree?.id, 'hometown'],
+    queryFn:  () => api.categories('?type=hometown').then(r => r.data),
+    enabled:  !!currentTree?.id,
+  })
+  const { data: maritalCats = [] } = useQuery({
+    queryKey: ['categories', currentTree?.id, 'marital_status'],
+    queryFn:  () => api.categories('?type=marital_status').then(r => r.data),
+    enabled:  !!currentTree?.id,
+  })
+  const activeOccupations = occupationCats.filter(c => c.isActive !== false)
+  const activeHometowns   = hometownCats.filter(c => c.isActive !== false)
+  const activeMaritalStatuses = maritalCats.filter(c => c.isActive !== false)
 
   const set = k => e => setSpouseForm(f => ({ ...f, [k]: e.target.value }))
 
@@ -67,7 +88,7 @@ export default function AddSpouseModal({ member, onClose }) {
   const handleSave = async () => {
     if (!member) return
 
-    // Validate ngày
+    // Validate
     if (spouseForm.marriageDate) {
       if (member.birthDate && spouseForm.marriageDate <= member.birthDate.slice(0,10))
         return toast.error('Ngày kết hôn phải sau ngày sinh')
@@ -82,8 +103,10 @@ export default function AddSpouseModal({ member, onClose }) {
       const spouseData = {
         fullName: spouseForm.fullName.trim(), nickname: spouseForm.nickname,
         gender: spouseForm.gender, birthDate: spouseForm.birthDate,
-        birthPlace: spouseForm.birthPlace, occupation: spouseForm.occupation,
-        hometown: spouseForm.hometown, address: spouseForm.address,
+        birthPlace: spouseForm.birthPlace === '__other__' ? customBirthPlace.trim() : spouseForm.birthPlace,
+        occupation: spouseForm.occupation === '__other__' ? customOccupation.trim() : spouseForm.occupation,
+        hometown: spouseForm.hometown === '__other__' ? customHometown.trim() : spouseForm.hometown,
+        address: spouseForm.address,
         bio: spouseForm.bio, generation: member.generation,
       }
       Object.entries(spouseData).forEach(([k, v]) => { if (v) fd.append(k, String(v)) })
@@ -159,16 +182,34 @@ export default function AddSpouseModal({ member, onClose }) {
                   onChange={set('birthDate')} max={TODAY}/>
               </Field>
               <Field label="Nghề nghiệp">
-                <Input value={spouseForm.occupation} onChange={set('occupation')}
-                  placeholder="Nghề nghiệp..."/>
+                <Select value={spouseForm.occupation} onChange={set('occupation')}>
+                  <option value="">— Chọn nghề nghiệp —</option>
+                  {activeOccupations.map(c => <option key={c.value} value={c.label}>{c.label}</option>)}
+                  <option value="__other__">Khác...</option>
+                </Select>
+                {spouseForm.occupation === '__other__' && (
+                  <Input value={customOccupation} onChange={e => setCustomOccupation(e.target.value)} placeholder="Nhập nghề nghiệp..." style={{marginTop:4}}/>
+                )}
               </Field>
               <Field label="Quê quán">
-                <Input value={spouseForm.hometown} onChange={set('hometown')}
-                  placeholder="Quê gốc..."/>
+                <Select value={spouseForm.hometown} onChange={set('hometown')}>
+                  <option value="">— Chọn quê quán —</option>
+                  {activeHometowns.map(c => <option key={c.value} value={c.label}>{c.label}</option>)}
+                  <option value="__other__">Khác...</option>
+                </Select>
+                {spouseForm.hometown === '__other__' && (
+                  <Input value={customHometown} onChange={e => setCustomHometown(e.target.value)} placeholder="Nhập quê quán..." style={{marginTop:4}}/>
+                )}
               </Field>
               <Field label="Nơi sinh">
-                <Input value={spouseForm.birthPlace} onChange={set('birthPlace')}
-                  placeholder="Nơi sinh..."/>
+                <Select value={spouseForm.birthPlace} onChange={set('birthPlace')}>
+                  <option value="">— Chọn nơi sinh —</option>
+                  {activeHometowns.map(c => <option key={c.value} value={c.label}>{c.label}</option>)}
+                  <option value="__other__">Khác...</option>
+                </Select>
+                {spouseForm.birthPlace === '__other__' && (
+                  <Input value={customBirthPlace} onChange={e => setCustomBirthPlace(e.target.value)} placeholder="Nhập nơi sinh..." style={{marginTop:4}}/>
+                )}
               </Field>
               <Field label="Địa chỉ hiện tại" span={2}>
                 <Input value={spouseForm.address} onChange={set('address')}
@@ -206,9 +247,14 @@ export default function AddSpouseModal({ member, onClose }) {
           </Field>
           <Field label="Trạng thái hôn nhân">
             <Select value={spouseForm.status} onChange={set('status')}>
-              <option value="living">Đang sống chung</option>
-              <option value="divorced">Ly hôn</option>
-              <option value="widowed">Góa</option>
+              {activeMaritalStatuses.length > 0
+                ? activeMaritalStatuses.map(c => <option key={c.value} value={c.value}>{c.label}</option>)
+                : <>
+                    <option value="living">Đang sống chung</option>
+                    <option value="divorced">Ly hôn</option>
+                    <option value="widowed">Góa</option>
+                  </>
+              }
             </Select>
           </Field>
           <Field label="Ngày kết thúc (nếu có)">
