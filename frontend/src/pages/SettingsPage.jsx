@@ -19,6 +19,7 @@ const TYPE_LABELS = {
   achievement_level: 'Cấp độ thành tích',
   death_cause:       'Nguyên nhân mất',
   burial_place:      'Địa điểm mai táng',
+  event_type:        'Loại sự kiện',
 }
 
 

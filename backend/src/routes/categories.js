@@ -81,6 +81,11 @@ const DEFAULTS = {
     { value: 'temple',   label: 'Chùa / Nhà thờ' },
     { value: 'home',     label: 'Tại gia' },
   ],
+  event_type: [
+    { value: 'meeting', label: 'Họp họ' },
+    { value: 'anniversary', label: 'Ngày giỗ' },
+    { value: 'other', label: 'Sự kiện khác' },
+  ]
 }
 
 // ── Danh sách loại danh mục hợp lệ ──

@@ -141,7 +141,7 @@ function generateFamilyTreeSVG(members, marriages, edgeType = 'smoothstep', hide
   edges.forEach(e => {
     const src = nodeMap[e.source]
     const tgt = nodeMap[e.target]
-    if (!src || !tgt) return
+    if (!src || !tgt) return 
 
     const srcX = src.position.x + offsetX
     const srcY = src.position.y + offsetY
@@ -763,12 +763,6 @@ export default function ExportPage() {
               {exporting ? 'Đang xuất PDF...' : '📄 Xuất Phả Đồ PDF'}
             </button>
           </div>
-
-          <div className="bg-blue-50 border-2 border-blue-200 p-4 rounded-sm">
-            <p className="text-sm font-light text-blue-900" style={{ fontFamily: 'Georgia, serif' }}>
-              <span className="font-medium">Phiên bản mới:</span> PDF được vẽ trực tiếp từ dữ liệu (Custom SVG Renderer) — đường nối cha con, hôn nhân luôn hiển thị đầy đủ. File PDF bao gồm tiêu đề, phả đồ, chú thích và thống kê.
-            </p>
-          </div>
         </div>
       )}
 
@@ -846,12 +840,6 @@ export default function ExportPage() {
             >
               {exporting ? 'Đang xuất...' : '📊 Xuất Danh Sách CSV'}
             </button>
-          </div>
-
-          <div className="bg-blue-50 border-2 border-blue-200 p-4 rounded-sm">
-            <p className="text-sm font-light text-blue-900" style={{ fontFamily: 'Georgia, serif' }}>
-              <span className="font-medium">Lưu ý:</span> File CSV bao gồm tiêu đề gia phả, ngày xuất, người thực hiện. Hỗ trợ mở trực tiếp bằng Excel, Google Sheets, v.v.
-            </p>
           </div>
         </div>
       )}

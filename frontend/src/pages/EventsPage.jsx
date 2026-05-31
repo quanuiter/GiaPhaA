@@ -7,7 +7,9 @@ import { Solar } from 'lunar-javascript'
 export default function EventsPage() {
   const [activeTab, setActiveTab] = useState('upcoming')
   const [showAddForm, setShowAddForm] = useState(false)
-  const [formData, setFormData] = useState({ type: 'meeting', name: '', eventDate: '', lunarDate: '', location: '', note: '' })
+  const [formData, setFormData] = useState({ type: '', name: '', eventDate: '', lunarDate: '', location: '', note: '' })
+  const [customType, setCustomType] = useState('')
+  const [editCustomType, setEditCustomType] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const currentTree = useAuthStore(s => s.currentTree)
   
@@ -29,7 +31,19 @@ export default function EventsPage() {
     enabled: !!treeId
   })
 
-  const typeLabel = { anniversary: 'Ngày giỗ', meeting: 'Họp họ', other: 'Sự kiện khác' }
+  const { data: eventTypeCats = [] } = useQuery({
+    queryKey: ['categories', treeId, 'event_type'],
+    queryFn: () => treeApi(treeId).categories('?type=event_type').then(r => r.data ?? r),
+    enabled: !!treeId
+  })
+  const activeEventTypes = eventTypeCats.filter(c => c.isActive !== false)
+
+  const getTypeLabel = (t) => {
+    if (t === 'anniversary') return 'Ngày giỗ'
+    if (t === 'meeting') return 'Họp họ'
+    if (t === 'other') return 'Sự kiện khác'
+    return t || 'Khác'
+  }
 
   // Hàm tự động tính ngày Âm lịch khi chọn ngày Dương lịch
   const handleDateChange = (e) => {
@@ -59,11 +73,13 @@ export default function EventsPage() {
     try {
       await treeApi(treeId).createEvent({
         ...formData,
+        type: formData.type === '__other__' ? customType : formData.type,
         eventDate: new Date(formData.eventDate).toISOString()
       })
       queryClient.invalidateQueries({ queryKey: ['events', treeId] })
       queryClient.invalidateQueries({ queryKey: ['upcomingEvents', treeId] })
-      setFormData({ type: 'meeting', name: '', eventDate: '', lunarDate: '', location: '', note: '' })
+      setFormData({ type: '', name: '', eventDate: '', lunarDate: '', location: '', note: '' })
+      setCustomType('')
       setShowAddForm(false)
     } catch (err) {
       alert('Lỗi: ' + err.response?.data?.message || err.message)
@@ -97,8 +113,13 @@ export default function EventsPage() {
       eventDate: ev.eventDate ? new Date(ev.eventDate).toISOString().split('T')[0] : '',
       location: ev.location || '',
       note: ev.note || '',
-      type: ev.type,
+      type: activeEventTypes.some(c => c.label === ev.type) || ev.type === 'meeting' || ev.type === 'other' || ev.type === 'anniversary' ? ev.type : '__other__',
     })
+    if (!activeEventTypes.some(c => c.label === ev.type) && ev.type !== 'meeting' && ev.type !== 'other' && ev.type !== 'anniversary') {
+      setEditCustomType(ev.type)
+    } else {
+      setEditCustomType('')
+    }
   }
 
   const handleCancelEdit = () => {
@@ -111,7 +132,7 @@ export default function EventsPage() {
     try {
       const payload = ev.type === 'anniversary'
         ? { location: editData.location, note: editData.note }
-        : { name: editData.name, eventDate: editData.eventDate ? new Date(editData.eventDate).toISOString() : undefined, location: editData.location, note: editData.note }
+        : { name: editData.name, type: editData.type === '__other__' ? editCustomType : editData.type, eventDate: editData.eventDate ? new Date(editData.eventDate).toISOString() : undefined, location: editData.location, note: editData.note }
       await treeApi(treeId).updateEvent(ev.id, payload)
       queryClient.invalidateQueries({ queryKey: ['events', treeId] })
       queryClient.invalidateQueries({ queryKey: ['upcomingEvents', treeId] })
@@ -185,13 +206,35 @@ export default function EventsPage() {
               <label className="block text-sm font-light text-amber-900 mb-2" style={{fontFamily: 'Georgia, serif'}}>Loại sự kiện</label>
               <select
                 value={formData.type}
-                onChange={(e) => setFormData({...formData, type: e.target.value})}
+                onChange={(e) => {
+                  setFormData({...formData, type: e.target.value})
+                  if (e.target.value !== '__other__') setCustomType('')
+                }}
                 className="w-full px-3 py-2 border border-amber-200 rounded-sm text-sm focus:outline-none focus:border-amber-900 bg-white"
                 style={{fontFamily: 'Georgia, serif'}}
               >
+                <option value="">— Chọn loại sự kiện —</option>
                 <option value="meeting">Họp họ</option>
                 <option value="other">Sự kiện khác</option>
+                {activeEventTypes.map(c => (
+                  <option key={c.value} value={c.label}>{c.label}</option>
+                ))}
+                {formData.type && !activeEventTypes.some(c => c.label === formData.type) && formData.type !== 'meeting' && formData.type !== 'other' && formData.type !== '__other__' && (
+                  <option value={formData.type}>{formData.type} (cũ)</option>
+                )}
+                <option value="__other__">Khác...</option>
               </select>
+              {formData.type === '__other__' && (
+                <input
+                  type="text"
+                  required
+                  value={customType}
+                  onChange={(e) => setCustomType(e.target.value)}
+                  placeholder="Nhập loại sự kiện..."
+                  className="w-full px-3 py-2 mt-2 border border-amber-200 rounded-sm text-sm focus:outline-none focus:border-amber-900"
+                  style={{fontFamily: 'Georgia, serif'}}
+                />
+              )}
             </div>
 
             <div>
@@ -259,7 +302,8 @@ export default function EventsPage() {
               type="button"
               onClick={() => {
                 setShowAddForm(false)
-                setFormData({ type: 'meeting', name: '', eventDate: '', lunarDate: '', location: '', note: '' })
+                setFormData({ type: '', name: '', eventDate: '', lunarDate: '', location: '', note: '' })
+                setCustomType('')
               }}
               className="px-4 py-2 border border-amber-900 text-amber-900 text-sm font-light hover:bg-amber-50 transition-colors rounded-sm"
               style={{fontFamily: 'Georgia, serif'}}
@@ -319,8 +363,42 @@ export default function EventsPage() {
                           )}
                         </td>
                         <td className="px-4 py-3 text-sm text-amber-800 font-light" style={{fontFamily: 'Georgia, serif'}}>
-                          {typeLabel[ev.type]}
-                          {isAnniversary && <div className="text-xs text-amber-600 italic mt-1">Chỉ sửa địa điểm & ghi chú</div>}
+                          {isAnniversary ? (
+                            <>
+                              Ngày giỗ
+                              <div className="text-xs text-amber-600 italic mt-1">Chỉ sửa địa điểm & ghi chú</div>
+                            </>
+                          ) : (
+                            <div className="space-y-2">
+                              <select
+                                value={editData.type}
+                                onChange={(e) => {
+                                  setEditData({...editData, type: e.target.value});
+                                  if (e.target.value !== '__other__') setEditCustomType('')
+                                }}
+                                className="w-full px-2 py-1 border border-amber-300 rounded-sm text-sm focus:outline-none focus:border-amber-900 bg-white"
+                              >
+                                <option value="">— Chọn loại sự kiện —</option>
+                                <option value="meeting">Họp họ</option>
+                                <option value="other">Sự kiện khác</option>
+                                {activeEventTypes.map(c => <option key={c.value} value={c.label}>{c.label}</option>)}
+                                {editData.type && !activeEventTypes.some(c => c.label === editData.type) && editData.type !== 'meeting' && editData.type !== 'other' && editData.type !== '__other__' && (
+                                  <option value={editData.type}>{editData.type} (cũ)</option>
+                                )}
+                                <option value="__other__">Khác...</option>
+                              </select>
+                              {editData.type === '__other__' && (
+                                <input
+                                  type="text"
+                                  required
+                                  value={editCustomType}
+                                  onChange={e => setEditCustomType(e.target.value)}
+                                  placeholder="Nhập loại sự kiện..."
+                                  className="w-full px-2 py-1 border border-amber-300 rounded-sm text-sm focus:outline-none focus:border-amber-900"
+                                />
+                              )}
+                            </div>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-sm" style={{fontFamily: 'Georgia, serif'}}>
                           <input
@@ -372,7 +450,7 @@ export default function EventsPage() {
                         {ev.note && <p className="text-xs text-amber-700 italic mt-1">{ev.note}</p>}
                       </td>
                       <td className="px-4 py-3 text-sm text-amber-800 font-light" style={{fontFamily: 'Georgia, serif'}}>
-                        {typeLabel[ev.type]}
+                        {getTypeLabel(ev.type)}
                       </td>
                       <td className="px-4 py-3 text-sm text-amber-800 font-light" style={{fontFamily: 'Georgia, serif'}}>
                         {ev.location || '-'}
