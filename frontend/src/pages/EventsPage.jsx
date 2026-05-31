@@ -150,7 +150,7 @@ export default function EventsPage() {
             }`}
             style={{fontFamily: 'Georgia, serif'}}
           >
-            Sắp tới (30 ngày)
+            Sắp tới
           </button>
           <button
             onClick={() => setActiveTab('all')}
