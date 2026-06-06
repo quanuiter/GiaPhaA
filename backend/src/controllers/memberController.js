@@ -51,7 +51,24 @@ exports.create = async (req, res) => {
     if (birthDate && new Date(birthDate) > new Date())
       return res.status(400).json({ message: 'Ngày sinh không hợp lệ' })
 
-const member = await prisma.member.create({
+    // Kiểm tra ràng buộc ngày sinh với bố mẹ
+    if (birthDate && (fatherId || motherId)) {
+      const bDate = new Date(birthDate)
+      const parents = await prisma.member.findMany({
+        where: { id: { in: [fatherId ? +fatherId : -1, motherId ? +motherId : -1] } },
+        include: { death: true }
+      })
+      for (const p of parents) {
+        if (p.birthDate && bDate <= p.birthDate) {
+          return res.status(400).json({ message: 'Ngày sinh của con phải sau ngày sinh của bố/mẹ' })
+        }
+        if (p.death && bDate > p.death.deathDate) {
+          return res.status(400).json({ message: 'Ngày sinh của con không được sau ngày mất của bố/mẹ' })
+        }
+      }
+    }
+
+    const member = await prisma.member.create({
       data: {
         treeId, fullName: fullName.trim(), nickname, gender,
         birthDate:  birthDate  ? new Date(birthDate) : null,
@@ -80,6 +97,54 @@ exports.update = async (req, res) => {
     if (data.generation) data.generation = +data.generation
     if (req.file)        data.avatarUrl  = `/uploads/${req.file.filename}`
     delete data.treeId  // không cho đổi cây
+
+    const currentMember = await prisma.member.findUnique({
+      where: { id: +req.params.id },
+      include: { death: true, childrenAsFather: true, childrenAsMother: true, marriagesAsH: true, marriagesAsW: true }
+    })
+    if (!currentMember) return res.status(404).json({ message: 'Không tìm thấy' })
+
+    const bDate = data.birthDate || currentMember.birthDate
+    if (bDate) {
+      if (bDate > new Date())
+        return res.status(400).json({ message: 'Ngày sinh không hợp lệ' })
+      if (currentMember.death && bDate >= currentMember.death.deathDate)
+        return res.status(400).json({ message: 'Ngày sinh phải trước ngày mất' })
+
+      const fId = data.fatherId !== undefined ? data.fatherId : currentMember.fatherId
+      const mId = data.motherId !== undefined ? data.motherId : currentMember.motherId
+
+      if (fId || mId) {
+        const parents = await prisma.member.findMany({
+          where: { id: { in: [fId ? fId : -1, mId ? mId : -1] } },
+          include: { death: true }
+        })
+        for (const p of parents) {
+          if (p.birthDate && bDate <= p.birthDate)
+            return res.status(400).json({ message: 'Ngày sinh của con phải sau ngày sinh của bố/mẹ' })
+          if (p.death && bDate > p.death.deathDate)
+            return res.status(400).json({ message: 'Ngày sinh của con không được sau ngày mất của bố/mẹ' })
+        }
+      }
+
+      // Kiểm tra với các con
+      const childrenIds = [...currentMember.childrenAsFather, ...currentMember.childrenAsMother].map(c => c.id)
+      if (childrenIds.length > 0) {
+        const children = await prisma.member.findMany({ where: { id: { in: childrenIds } } })
+        for (const c of children) {
+          if (c.birthDate && bDate >= c.birthDate)
+            return res.status(400).json({ message: 'Ngày sinh của bố/mẹ phải trước ngày sinh của con' })
+        }
+      }
+
+      // Kiểm tra với ngày kết hôn
+      const marriages = [...currentMember.marriagesAsH, ...currentMember.marriagesAsW]
+      for (const m of marriages) {
+        if (m.marriageDate && bDate >= m.marriageDate) {
+          return res.status(400).json({ message: 'Ngày sinh phải trước ngày kết hôn' })
+        }
+      }
+    }
 
     const member = await prisma.member.update({
       where: { id: +req.params.id }, data
@@ -124,6 +189,22 @@ exports.recordDeath = async (req, res) => {
     if (member.death) return res.status(400).json({ message: 'Đã ghi nhận mất rồi' })
     if (member.birthDate && new Date(deathDate) <= member.birthDate)
       return res.status(400).json({ message: 'Ngày mất phải sau ngày sinh' })
+
+    // Kiểm tra ngày mất so với ngày kết hôn
+    const marriages = [...member.marriagesAsH, ...member.marriagesAsW]
+    for (const m of marriages) {
+      if (m.marriageDate && new Date(deathDate) < m.marriageDate)
+        return res.status(400).json({ message: 'Ngày mất không được trước ngày kết hôn' })
+    }
+
+    // Kiểm tra ngày mất so với ngày sinh của con
+    const children = await prisma.member.findMany({
+      where: { OR: [{ fatherId: memberId }, { motherId: memberId }] }
+    })
+    for (const c of children) {
+      if (c.birthDate && new Date(deathDate) < c.birthDate)
+        return res.status(400).json({ message: 'Ngày mất không được trước ngày sinh của con' })
+    }
 
     const longevity = member.birthDate
       ? new Date(deathDate).getFullYear() - member.birthDate.getFullYear()

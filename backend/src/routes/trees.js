@@ -104,11 +104,48 @@ router.put('/:id', auth(), async (req, res) => {
 // Xóa cây
 router.delete('/:id', auth(), async (req, res) => {
   try {
+    const treeId = +req.params.id;
     const access = await prisma.treeUser.findUnique({
-      where: { treeId_userId: { treeId: +req.params.id, userId: req.user.id } }
+      where: { treeId_userId: { treeId, userId: req.user.id } }
     })
     if (access?.role !== 'admin') return res.status(403).json({ message: 'Chỉ admin mới được xóa' })
-    await prisma.familyTree.delete({ where: { id: +req.params.id } })
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Lấy danh sách member
+      const members = await tx.member.findMany({ where: { treeId }, select: { id: true } });
+      const memberIds = members.map(m => m.id);
+
+      if (memberIds.length > 0) {
+        // Gỡ liên kết user -> member
+        await tx.user.updateMany({
+          where: { memberId: { in: memberIds } },
+          data: { memberId: null }
+        });
+
+        // Gỡ liên kết cha mẹ để tránh lỗi foreign key self-reference
+        await tx.member.updateMany({
+          where: { treeId },
+          data: { fatherId: null, motherId: null }
+        });
+
+        // Xóa bảng phụ thuộc vào member
+        await tx.death.deleteMany({ where: { memberId: { in: memberIds } } });
+        await tx.achievement.deleteMany({ where: { memberId: { in: memberIds } } });
+      }
+
+      // Xóa các bảng phụ thuộc vào tree nhưng không có cascade
+      await tx.marriage.deleteMany({ where: { treeId } });
+      await tx.familyEvent.deleteMany({ where: { treeId } });
+      await tx.auditLog.deleteMany({ where: { treeId } });
+      if (memberIds.length > 0) {
+        await tx.auditLog.deleteMany({ where: { memberId: { in: memberIds } } });
+      }
+      await tx.category.deleteMany({ where: { treeId } });
+
+      // Cuối cùng xóa cây (sẽ tự động cascade xóa TreeUser, TreeConfig, Member)
+      await tx.familyTree.delete({ where: { id: treeId } });
+    });
+
     res.json({ message: 'Đã xóa cây gia phả' })
   } catch (err) { res.status(500).json({ message: err.message }) }
 })

@@ -36,6 +36,11 @@ exports.create = async (req, res) => {
     if (+year > currentYear) return res.status(400).json({ message: 'Năm thành tích không được vượt năm hiện tại' })
     if (member.birthDate && +year < member.birthDate.getFullYear())
       return res.status(400).json({ message: 'Năm thành tích không được nhỏ hơn năm sinh' })
+    
+    // Kiểm tra với năm mất
+    const memberDeath = await prisma.death.findUnique({ where: { memberId: +memberId } })
+    if (memberDeath && +year > memberDeath.deathDate.getFullYear())
+      return res.status(400).json({ message: 'Năm thành tích không được sau năm mất' })
 
     const achievement = await prisma.achievement.create({
       data: { memberId: +memberId, type, level, year: +year, description: description.trim(), issuedBy }
@@ -50,6 +55,19 @@ exports.update = async (req, res) => {
       return res.status(403).json({ message: 'Không có quyền' })
 
     const { type, level, year, description, issuedBy } = req.body
+    
+    const existing = await prisma.achievement.findUnique({ where: { id: +req.params.achievementId } })
+    if (!existing) return res.status(404).json({ message: 'Không tìm thấy thành tích' })
+
+    const member = await prisma.member.findFirst({ where: { id: existing.memberId }, include: { death: true } })
+    const currentYear = new Date().getFullYear()
+    
+    if (+year > currentYear) return res.status(400).json({ message: 'Năm thành tích không được vượt năm hiện tại' })
+    if (member && member.birthDate && +year < member.birthDate.getFullYear())
+      return res.status(400).json({ message: 'Năm thành tích không được nhỏ hơn năm sinh' })
+    if (member && member.death && +year > member.death.deathDate.getFullYear())
+      return res.status(400).json({ message: 'Năm thành tích không được sau năm mất' })
+
     const achievement = await prisma.achievement.update({
       where: { id: +req.params.achievementId },
       data: { type, level, year: +year, description, issuedBy }

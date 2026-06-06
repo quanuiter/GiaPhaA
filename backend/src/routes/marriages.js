@@ -38,8 +38,8 @@ router.post('/', auth(), checkAccess, async (req, res) => {
     if (husbandId === wifeId)
       return res.status(400).json({ message: 'Không thể kết hôn với chính mình' })
 
-    const husband = await prisma.member.findFirst({ where: { id: +husbandId, treeId } })
-    const wife    = await prisma.member.findFirst({ where: { id: +wifeId,    treeId } })
+    const husband = await prisma.member.findFirst({ where: { id: +husbandId, treeId }, include: { death: true } })
+    const wife    = await prisma.member.findFirst({ where: { id: +wifeId,    treeId }, include: { death: true } })
     if (!husband) return res.status(404).json({ message: 'Không tìm thấy chồng trong cây này' })
     if (!wife)    return res.status(404).json({ message: 'Không tìm thấy vợ trong cây này' })
 
@@ -60,6 +60,10 @@ router.post('/', auth(), checkAccess, async (req, res) => {
         return res.status(400).json({ message: 'Ngày kết hôn phải sau ngày sinh của chồng' })
       if (wife.birthDate && md <= wife.birthDate)
         return res.status(400).json({ message: 'Ngày kết hôn phải sau ngày sinh của vợ' })
+      if (husband.death && md > husband.death.deathDate)
+        return res.status(400).json({ message: 'Ngày kết hôn không được sau ngày mất của chồng' })
+      if (wife.death && md > wife.death.deathDate)
+        return res.status(400).json({ message: 'Ngày kết hôn không được sau ngày mất của vợ' })
     }
 
     // Kiểm tra huyết thống
@@ -94,6 +98,14 @@ router.put('/:id', auth(), checkAccess, async (req, res) => {
     const allowed = ['living', 'divorced', 'widowed']
     if (!allowed.includes(status))
       return res.status(400).json({ message: 'Trạng thái không hợp lệ' })
+
+    const currentMarriage = await prisma.marriage.findUnique({ where: { id: +req.params.id } })
+    if (!currentMarriage) return res.status(404).json({ message: 'Không tìm thấy' })
+
+    if (divorceDate && currentMarriage.marriageDate) {
+      if (new Date(divorceDate) <= currentMarriage.marriageDate)
+        return res.status(400).json({ message: 'Ngày ly hôn phải sau ngày kết hôn' })
+    }
 
     const marriage = await prisma.marriage.update({
       where: { id: +req.params.id },
