@@ -90,7 +90,7 @@ router.put('/:id', auth(), async (req, res) => {
     const access = await prisma.treeUser.findUnique({
       where: { treeId_userId: { treeId: +req.params.id, userId: req.user.id } }
     })
-    if (access?.role !== 'admin') return res.status(403).json({ message: 'Chỉ admin mới được sửa' })
+    if (req.user.username !== 'admin' && access?.role !== 'admin') return res.status(403).json({ message: 'Chỉ admin mới được sửa' })
 
     const { name, description, status } = req.body
     const tree = await prisma.familyTree.update({
@@ -105,10 +105,12 @@ router.put('/:id', auth(), async (req, res) => {
 router.delete('/:id', auth(), async (req, res) => {
   try {
     const treeId = +req.params.id;
-    const access = await prisma.treeUser.findUnique({
-      where: { treeId_userId: { treeId, userId: req.user.id } }
-    })
-    if (access?.role !== 'admin') return res.status(403).json({ message: 'Chỉ admin mới được xóa' })
+    const tree = await prisma.familyTree.findUnique({ where: { id: treeId } });
+    if (!tree) return res.status(404).json({ message: 'Không tìm thấy cây' });
+
+    if (req.user.username !== 'admin' && tree.createdBy !== req.user.id) {
+      return res.status(403).json({ message: 'Chỉ người tạo hoặc quản trị viên hệ thống mới được xóa cây' });
+    }
 
     await prisma.$transaction(async (tx) => {
       // 1. Lấy danh sách member
@@ -157,11 +159,15 @@ router.post('/:id/users', auth(), async (req, res) => {
     const access = await prisma.treeUser.findUnique({
       where: { treeId_userId: { treeId, userId: req.user.id } }
     })
-    if (access?.role !== 'admin') return res.status(403).json({ message: 'Chỉ admin mới được phân quyền' })
+    if (req.user.username !== 'admin' && access?.role !== 'admin') return res.status(403).json({ message: 'Chỉ admin mới được phân quyền' })
 
     const { username, role } = req.body
     const targetUser = await prisma.user.findUnique({ where: { username } })
     if (!targetUser) return res.status(404).json({ message: 'Không tìm thấy user' })
+
+    const tree = await prisma.familyTree.findUnique({ where: { id: treeId } })
+    if (targetUser.username === 'admin') return res.status(400).json({ message: 'Không thể thay đổi quyền của quản trị viên hệ thống' })
+    if (targetUser.id === tree.createdBy) return res.status(400).json({ message: 'Không thể thay đổi quyền của người tạo cây' })
 
     const result = await prisma.treeUser.upsert({
       where: { treeId_userId: { treeId, userId: targetUser.id } },
@@ -179,8 +185,14 @@ router.delete('/:id/users/:userId', auth(), async (req, res) => {
     const access = await prisma.treeUser.findUnique({
       where: { treeId_userId: { treeId, userId: req.user.id } }
     })
-    if (access?.role !== 'admin') return res.status(403).json({ message: 'Chỉ admin mới được xóa thành viên' })
+    if (req.user.username !== 'admin' && access?.role !== 'admin') return res.status(403).json({ message: 'Chỉ admin mới được xóa thành viên' })
     if (+req.params.userId === req.user.id) return res.status(400).json({ message: 'Không thể tự xóa mình' })
+
+    const targetUser = await prisma.user.findUnique({ where: { id: +req.params.userId } })
+    const tree = await prisma.familyTree.findUnique({ where: { id: treeId } })
+    
+    if (targetUser?.username === 'admin') return res.status(400).json({ message: 'Không thể xóa quản trị viên hệ thống khỏi cây' })
+    if (targetUser?.id === tree.createdBy) return res.status(400).json({ message: 'Không thể xóa người tạo cây khỏi cây' })
 
     await prisma.treeUser.delete({
       where: { treeId_userId: { treeId, userId: +req.params.userId } }
@@ -223,7 +235,7 @@ router.get('/:id/pending-requests', auth(), async (req, res) => {
     const access = await prisma.treeUser.findUnique({
       where: { treeId_userId: { treeId, userId: req.user.id } }
     });
-    if (access?.role !== 'admin') return res.status(403).json({ message: 'Bạn không có quyền' });
+    if (req.user.username !== 'admin' && access?.role !== 'admin') return res.status(403).json({ message: 'Bạn không có quyền' });
 
     const requests = await prisma.treeUser.findMany({
       where: { treeId, role: 'pending' },
@@ -248,7 +260,7 @@ router.put('/:id/requests/:userId/approve', auth(), async (req, res) => {
     const access = await prisma.treeUser.findUnique({
       where: { treeId_userId: { treeId, userId: req.user.id } }
     });
-    if (access?.role !== 'admin') return res.status(403).json({ message: 'Bạn không có quyền' });
+    if (req.user.username !== 'admin' && access?.role !== 'admin') return res.status(403).json({ message: 'Bạn không có quyền' });
 
     await prisma.treeUser.update({
       where: { treeId_userId: { treeId, userId: targetUserId } },
@@ -267,7 +279,7 @@ router.delete('/:id/requests/:userId/reject', auth(), async (req, res) => {
     const access = await prisma.treeUser.findUnique({
       where: { treeId_userId: { treeId, userId: req.user.id } }
     });
-    if (access?.role !== 'admin') return res.status(403).json({ message: 'Bạn không có quyền' });
+    if (req.user.username !== 'admin' && access?.role !== 'admin') return res.status(403).json({ message: 'Bạn không có quyền' });
 
     await prisma.treeUser.delete({
       where: { treeId_userId: { treeId, userId: targetUserId } }
